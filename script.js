@@ -39,7 +39,9 @@ if (form) {
       `Name: ${details.get('name')}`,
       `Phone: ${details.get('phone')}`,
       `Event: ${details.get('event')}`,
-      `Date: ${details.get('date')}`,
+      details.get('email') ? `Email: ${details.get('email')}` : null,
+      details.get('date') ? `Date: ${details.get('date')}` : null,
+      details.get('guests') ? `Guests: ${details.get('guests')}` : null,
       details.get('message') ? `Message: ${details.get('message')}` : null,
     ].filter(Boolean).join('\n');
     window.open(`https://wa.me/919359567494?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');

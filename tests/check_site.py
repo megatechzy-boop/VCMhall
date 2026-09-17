@@ -43,5 +43,7 @@ for path, page in pages.items():
 spaces = pages[ROOT / "our-spaces.html"]
 assert len(spaces.photos) == 5 and len(set(spaces.photos)) == 5, "Expected five distinct room photos"
 assert "our-spaces.html" in pages[ROOT / "index.html"].links, "Home must link to Our Spaces"
+assert "contact.html" in pages[ROOT / "index.html"].links, "Home must link to Contact"
+assert "#enquire" in pages[ROOT / "contact.html"].links, "Contact must link to its enquiry form"
 assert "index.html#enquire" in spaces.links, "Our Spaces must link to booking"
 print(f"PASS: {len(pages)} pages, {checked} local references, five room photo controls")

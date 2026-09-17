@@ -1,8 +1,9 @@
 # Late Venutai Chavan Multipurpose Hall
 
-Dependency-free HTML, CSS, and JavaScript venue site with a Home page (`index.html`) and a dedicated Our Spaces page (`our-spaces.html`).
+Dependency-free HTML, CSS, and JavaScript venue site with Home, Our Spaces, Facilities, Gallery, and Contact pages.
 The Facilities page is at `facilities.html`.
 The Gallery page is at `gallery.html`.
+The Contact page is at `contact.html`.
 
 ## Run locally
 
@@ -17,6 +18,11 @@ Then open `http://localhost:8000`.
 Open `http://localhost:8000/our-spaces.html` for the Our Spaces page. There is no dependency installation or build step.
 Open `http://localhost:8000/facilities.html` for the Facilities page.
 Open `http://localhost:8000/gallery.html` for the Gallery page.
+Open `http://localhost:8000/contact.html` for the Contact page.
+
+## Contact
+
+The Contact page follows the supplied reference with a venue hero, contact details, enquiry form, location panel, visit banner, and light footer. It uses crops of the supplied image for the hero and location map. The map opens Google Maps search for the shown Nigdi address; the site has no confirmed venue pin. The enquiry form uses the existing WhatsApp handoff and does not store data. No working email address was supplied, so the displayed domain is text and the form provides the online contact path. Working hours and nearby landmarks follow the reference and should be confirmed by the venue.
 
 ## Gallery
 
