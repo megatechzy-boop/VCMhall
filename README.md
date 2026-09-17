@@ -2,6 +2,7 @@
 
 Dependency-free HTML, CSS, and JavaScript venue site with a Home page (`index.html`) and a dedicated Our Spaces page (`our-spaces.html`).
 The Facilities page is at `facilities.html`.
+The Gallery page is at `gallery.html`.
 
 ## Run locally
 
@@ -15,6 +16,11 @@ Then open `http://localhost:8000`.
 
 Open `http://localhost:8000/our-spaces.html` for the Our Spaces page. There is no dependency installation or build step.
 Open `http://localhost:8000/facilities.html` for the Facilities page.
+Open `http://localhost:8000/gallery.html` for the Gallery page.
+
+## Gallery
+
+The Gallery page follows the supplied reference with a hall hero, eight photo filters, 12 photo cards, a booking banner, and a light footer. Cards open the shared photo viewer. Previous/next controls stay within the selected filter. The first five photos reuse existing venue images. Seven additional views display the matching photo regions of the supplied reference image (`assets/gallery-reference.jpg`); approved full-resolution photos should replace these when available.
 
 ## Facilities
 
@@ -30,6 +36,7 @@ All five photos and the lotus mark are reused from the existing site. The photog
 
 ```sh
 node --check script.js
+node --check gallery.js
 python tests/check_site.py
 ```
 
