@@ -1,6 +1,7 @@
 # Late Venutai Chavan Multipurpose Hall
 
-Dependency-free HTML, CSS, and JavaScript venue site with Home, Our Spaces, Facilities, Gallery, and Contact pages.
+Dependency-free HTML, CSS, and JavaScript venue site with Home, About, Our Spaces, Facilities, Gallery, and Contact pages.
+The About page is at `about.html`.
 The Facilities page is at `facilities.html`.
 The Gallery page is at `gallery.html`.
 The Contact page is at `contact.html`.
@@ -15,10 +16,15 @@ python -m http.server 8000
 
 Then open `http://localhost:8000`.
 
+Open `http://localhost:8000/about.html` for the About page.
 Open `http://localhost:8000/our-spaces.html` for the Our Spaces page. There is no dependency installation or build step.
 Open `http://localhost:8000/facilities.html` for the Facilities page.
 Open `http://localhost:8000/gallery.html` for the Gallery page.
 Open `http://localhost:8000/contact.html` for the Contact page.
+
+## About
+
+The About page follows the supplied reference with hall hero, portrait, inspiration and venue sections, values, commitment, highlights, booking banner, and light footer. It reuses the existing hall photograph and crops the portrait, venue entrance, and flowers from the supplied image. Biographical wording and the 10+/1000+ figures come from the reference and should be confirmed by the venue before publication elsewhere.
 
 ## Contact
 
