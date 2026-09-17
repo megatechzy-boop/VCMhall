@@ -67,26 +67,28 @@ spaceDialog?.querySelector('.dialog-close').addEventListener('click', () => spac
 document.getElementById('dialog-enquire')?.addEventListener('click', () => spaceDialog.close());
 
 const galleryDialog = document.getElementById('gallery-dialog');
-const galleryButtons = [...document.querySelectorAll('.gallery-photo')];
-let currentPhoto = 0;
-function showPhoto(index) {
-  currentPhoto = (index + galleryButtons.length) % galleryButtons.length;
-  const photo = galleryButtons[currentPhoto];
-  document.getElementById('lightbox-image').src = photo.dataset.image;
-  document.getElementById('lightbox-image').alt = photo.dataset.caption;
-  document.getElementById('lightbox-caption').textContent = photo.dataset.caption;
-  document.getElementById('photo-count').textContent = `${currentPhoto + 1} / ${galleryButtons.length}`;
-  if (!galleryDialog.open) galleryDialog.showModal();
+if (galleryDialog) {
+  const galleryButtons = [...document.querySelectorAll('.gallery-photo')];
+  let currentPhoto = 0;
+  function showPhoto(index) {
+    currentPhoto = (index + galleryButtons.length) % galleryButtons.length;
+    const photo = galleryButtons[currentPhoto];
+    document.getElementById('lightbox-image').src = photo.dataset.image;
+    document.getElementById('lightbox-image').alt = photo.dataset.caption;
+    document.getElementById('lightbox-caption').textContent = photo.dataset.caption;
+    document.getElementById('photo-count').textContent = `${currentPhoto + 1} / ${galleryButtons.length}`;
+    if (!galleryDialog.open) galleryDialog.showModal();
+  }
+  galleryButtons.forEach((button, index) => button.addEventListener('click', () => showPhoto(index)));
+  document.querySelector('.gallery-more')?.addEventListener('click', () => showPhoto(0));
+  document.getElementById('photo-prev').addEventListener('click', () => showPhoto(currentPhoto - 1));
+  document.getElementById('photo-next').addEventListener('click', () => showPhoto(currentPhoto + 1));
+  galleryDialog.querySelector('.dialog-close').addEventListener('click', () => galleryDialog.close());
+  galleryDialog.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowLeft') showPhoto(currentPhoto - 1);
+    if (event.key === 'ArrowRight') showPhoto(currentPhoto + 1);
+  });
 }
-galleryButtons.forEach((button, index) => button.addEventListener('click', () => showPhoto(index)));
-document.querySelector('.gallery-more')?.addEventListener('click', () => showPhoto(0));
-document.getElementById('photo-prev').addEventListener('click', () => showPhoto(currentPhoto - 1));
-document.getElementById('photo-next').addEventListener('click', () => showPhoto(currentPhoto + 1));
-galleryDialog.querySelector('.dialog-close').addEventListener('click', () => galleryDialog.close());
-galleryDialog.addEventListener('keydown', (event) => {
-  if (event.key === 'ArrowLeft') showPhoto(currentPhoto - 1);
-  if (event.key === 'ArrowRight') showPhoto(currentPhoto + 1);
-});
 
 [spaceDialog, galleryDialog].filter(Boolean).forEach((dialog) => dialog.addEventListener('click', (event) => {
   const bounds = dialog.getBoundingClientRect();

@@ -1,6 +1,7 @@
 # Late Venutai Chavan Multipurpose Hall
 
 Dependency-free HTML, CSS, and JavaScript venue site with a Home page (`index.html`) and a dedicated Our Spaces page (`our-spaces.html`).
+The Facilities page is at `facilities.html`.
 
 ## Run locally
 
@@ -13,6 +14,11 @@ python -m http.server 8000
 Then open `http://localhost:8000`.
 
 Open `http://localhost:8000/our-spaces.html` for the Our Spaces page. There is no dependency installation or build step.
+Open `http://localhost:8000/facilities.html` for the Facilities page.
+
+## Facilities
+
+The Facilities page follows the supplied reference with a maroon hero, 12 amenity cards, booking banner, and responsive two-column phone layout. It reuses the site photos for the hall, guest rooms, and dining hall. For the other nine cards, CSS shows the corresponding photo region of the user-provided reference image (`assets/facilities-reference.jpg`); those are layout references, so approved full-resolution venue photos should replace them when available. Booking links open the existing enquiry form on Home.
 
 ## Our Spaces
 
