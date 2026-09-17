@@ -16,33 +16,35 @@ mainNav.querySelectorAll('a').forEach((link) => link.addEventListener('click', (
 }));
 
 const form = document.querySelector('.enquiry-card');
-const eventSelect = form.elements.event;
-const dateInput = form.elements.date;
-const today = new Date();
-dateInput.min = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+if (form) {
+  const eventSelect = form.elements.event;
+  const dateInput = form.elements.date;
+  const today = new Date();
+  dateInput.min = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 
-document.querySelectorAll('.occasion').forEach((button) => {
-  button.addEventListener('click', () => {
-    eventSelect.value = button.dataset.event;
-    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    setTimeout(() => form.elements.name.focus({ preventScroll: true }), 450);
+  document.querySelectorAll('.occasion').forEach((button) => {
+    button.addEventListener('click', () => {
+      eventSelect.value = button.dataset.event;
+      form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => form.elements.name.focus({ preventScroll: true }), 450);
+    });
   });
-});
 
-form.addEventListener('submit', (event) => {
-  event.preventDefault();
-  if (!form.reportValidity()) return;
-  const details = new FormData(form);
-  const message = [
-    'Hello, I would like to enquire about an event at Late Venutai Chavan Multipurpose Hall.',
-    `Name: ${details.get('name')}`,
-    `Phone: ${details.get('phone')}`,
-    `Event: ${details.get('event')}`,
-    `Date: ${details.get('date')}`,
-    details.get('message') ? `Message: ${details.get('message')}` : null,
-  ].filter(Boolean).join('\n');
-  window.open(`https://wa.me/919359567494?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
-});
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (!form.reportValidity()) return;
+    const details = new FormData(form);
+    const message = [
+      'Hello, I would like to enquire about an event at Late Venutai Chavan Multipurpose Hall.',
+      `Name: ${details.get('name')}`,
+      `Phone: ${details.get('phone')}`,
+      `Event: ${details.get('event')}`,
+      `Date: ${details.get('date')}`,
+      details.get('message') ? `Message: ${details.get('message')}` : null,
+    ].filter(Boolean).join('\n');
+    window.open(`https://wa.me/919359567494?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+  });
+}
 
 const spaces = {
   big: { title: 'Big Hall', description: 'Capacity up to 1200 people. Fully air-conditioned.', image: 'assets/hero-hall.png' },
@@ -61,8 +63,8 @@ document.querySelectorAll('[data-space]').forEach((button) => button.addEventLis
   document.getElementById('dialog-description').textContent = space.description;
   spaceDialog.showModal();
 }));
-spaceDialog.querySelector('.dialog-close').addEventListener('click', () => spaceDialog.close());
-document.getElementById('dialog-enquire').addEventListener('click', () => spaceDialog.close());
+spaceDialog?.querySelector('.dialog-close').addEventListener('click', () => spaceDialog.close());
+document.getElementById('dialog-enquire')?.addEventListener('click', () => spaceDialog.close());
 
 const galleryDialog = document.getElementById('gallery-dialog');
 const galleryButtons = [...document.querySelectorAll('.gallery-photo')];
@@ -77,7 +79,7 @@ function showPhoto(index) {
   if (!galleryDialog.open) galleryDialog.showModal();
 }
 galleryButtons.forEach((button, index) => button.addEventListener('click', () => showPhoto(index)));
-document.querySelector('.gallery-more').addEventListener('click', () => showPhoto(0));
+document.querySelector('.gallery-more')?.addEventListener('click', () => showPhoto(0));
 document.getElementById('photo-prev').addEventListener('click', () => showPhoto(currentPhoto - 1));
 document.getElementById('photo-next').addEventListener('click', () => showPhoto(currentPhoto + 1));
 galleryDialog.querySelector('.dialog-close').addEventListener('click', () => galleryDialog.close());
@@ -86,6 +88,7 @@ galleryDialog.addEventListener('keydown', (event) => {
   if (event.key === 'ArrowRight') showPhoto(currentPhoto + 1);
 });
 
-[spaceDialog, galleryDialog].forEach((dialog) => dialog.addEventListener('click', (event) => {
-  if (event.target === dialog) dialog.close();
+[spaceDialog, galleryDialog].filter(Boolean).forEach((dialog) => dialog.addEventListener('click', (event) => {
+  const bounds = dialog.getBoundingClientRect();
+  if (event.target === dialog && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) dialog.close();
 }));
