@@ -28,6 +28,8 @@ Open `http://localhost:8000/events.html` to browse the event pages.
 
 The eight static event pages have distinct titles, descriptions, planning points, space recommendations, questions, and links to the shared enquiry form. They use existing venue images and facts already presented elsewhere on the site. The Events index links every page, and the main navigation links the index. No event-specific photo collection or pricing was supplied; replace generic venue photos and confirm availability, capacities, and technical specifications with the venue before making stronger claims. The production domain is `https://venutaihall.com`; `sitemap.xml` lists the 15 public pages and `robots.txt` points to it.
 
+Every public page has a self-canonical URL matching the sitemap. Home includes LocalBusiness data using only the address and phone already shown on the site; no unverified ratings, prices, map pin, or opening hours are marked up. Six large photographic PNGs were converted to smaller JPEGs without changing their dimensions. After cPanel deployment, check that the HTTPS apex URL and sitemap load, then submit the sitemap in Google Search Console. Original approved venue photos and a verified Google Business Profile are still needed for stronger local trust signals.
+
 ## About
 
 The About page follows the supplied reference with hall hero, portrait, inspiration and venue sections, values, commitment, highlights, booking banner, and light footer. It reuses the existing hall photograph and crops the portrait, venue entrance, and flowers from the supplied image. Biographical wording and the 10+/1000+ figures come from the reference and should be confirmed by the venue before publication elsewhere.

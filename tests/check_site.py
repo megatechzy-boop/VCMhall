@@ -1,6 +1,8 @@
 """Dependency-free checks for the site's local links and photo controls."""
 from html.parser import HTMLParser
+import json
 from pathlib import Path
+import re
 from urllib.parse import unquote, urlsplit
 from xml.etree import ElementTree
 
@@ -60,4 +62,17 @@ expected_urls = {"https://venutaihall.com/"} | {
 }
 assert len(urls) == len(set(urls)) and set(urls) == expected_urls, "Sitemap must list every public HTML page once"
 assert "Sitemap: https://venutaihall.com/sitemap.xml" in (ROOT / "robots.txt").read_text(encoding="utf-8")
+titles = set()
+for path in pages:
+    html = path.read_text(encoding="utf-8")
+    canonical = "https://venutaihall.com/" if path.name == "index.html" else f"https://venutaihall.com/{path.name}"
+    assert re.findall(r'<link rel="canonical" href="([^"]+)"', html) == [canonical], f"{path.name}: canonical mismatch"
+    title = re.findall(r"<title>(.*?)</title>", html)
+    assert len(title) == 1 and title[0] not in titles, f"{path.name}: missing or duplicate title"
+    titles.add(title[0])
+schema = re.search(r'<script type="application/ld\+json">(.*?)</script>', (ROOT / "index.html").read_text(encoding="utf-8"), re.DOTALL)
+assert schema, "Home is missing LocalBusiness data"
+business = json.loads(schema.group(1))
+assert business["name"] == "Late Venutai Chavan Multipurpose Hall"
+assert business["address"]["postalCode"] == "411044"
 print(f"PASS: {len(pages)} pages, {checked} local references, five room photo controls")

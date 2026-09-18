@@ -94,11 +94,11 @@ if (form) {
 }
 
 const spaces = {
-  big: { title: 'Big Hall', description: 'Capacity up to 1200 people. Fully air-conditioned.', image: 'assets/hero-hall.png' },
-  small: { title: 'Small Hall', description: 'Capacity up to 350 people. Fully air-conditioned.', image: 'assets/small-hall.png' },
-  dining: { title: 'Dining Hall', description: 'Capacity up to 400 people. Fully air-conditioned.', image: 'assets/dining-hall.png' },
-  vip: { title: 'VIP A/C Dining', description: 'Dining for up to 50 people. Fully air-conditioned.', image: 'assets/vip-dining.png' },
-  rooms: { title: 'A/C Guest Rooms', description: 'Up to 8 comfortable, modern bedrooms.', image: 'assets/guest-room.png' },
+  big: { title: 'Big Hall', description: 'Capacity up to 1200 people. Fully air-conditioned.', image: 'assets/hero-hall.jpg' },
+  small: { title: 'Small Hall', description: 'Capacity up to 350 people. Fully air-conditioned.', image: 'assets/small-hall.jpg' },
+  dining: { title: 'Dining Hall', description: 'Capacity up to 400 people. Fully air-conditioned.', image: 'assets/dining-hall.jpg' },
+  vip: { title: 'VIP A/C Dining', description: 'Dining for up to 50 people. Fully air-conditioned.', image: 'assets/vip-dining.jpg' },
+  rooms: { title: 'A/C Guest Rooms', description: 'Up to 8 comfortable, modern bedrooms.', image: 'assets/guest-room.jpg' },
 };
 
 const spaceDialog = document.getElementById('space-dialog');
