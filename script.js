@@ -18,9 +18,49 @@ mainNav.querySelectorAll('a').forEach((link) => link.addEventListener('click', (
 const form = document.querySelector('.enquiry-card');
 if (form) {
   const eventSelect = form.elements.event;
-  const dateInput = form.elements.date;
-  const today = new Date();
-  dateInput.min = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  const monthSelect = form.querySelector('.booking-month');
+  const dateSelect = form.elements.date;
+  const submitButton = form.querySelector('[type="submit"]');
+  const status = form.querySelector('.booking-status');
+  let bookedDates = new Set();
+  let today = '';
+
+  const showStatus = (message) => { status.textContent = message; };
+  const fillDates = () => {
+    const selected = dateSelect.value;
+    dateSelect.replaceChildren(new Option('Select an available date', ''));
+    if (!monthSelect.value) return;
+    const [year, month] = monthSelect.value.split('-').map(Number);
+    const days = new Date(year, month, 0).getDate();
+    for (let day = 1; day <= days; day += 1) {
+      const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      if (date < today || bookedDates.has(date)) continue;
+      const label = new Date(year, month - 1, day).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+      dateSelect.add(new Option(label, date));
+    }
+    if ([...dateSelect.options].some((option) => option.value === selected)) dateSelect.value = selected;
+    if (dateSelect.options.length === 1) showStatus('No available dates this month. Choose another month.');
+  };
+  const loadAvailability = async () => {
+    const response = await fetch(form.action, { cache: 'no-store' });
+    if (!response.ok) throw new Error('Availability unavailable');
+    const data = await response.json();
+    bookedDates = new Set(data.bookedDates);
+    today = data.today;
+    if (!monthSelect.options.length || !monthSelect.options[1]) {
+      const [year, month] = today.split('-').map(Number);
+      monthSelect.replaceChildren(new Option('Select a month', ''));
+      for (let offset = 0; offset < 24; offset += 1) {
+        const value = new Date(year, month - 1 + offset, 1);
+        monthSelect.add(new Option(value.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }), `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}`));
+      }
+    }
+    fillDates();
+    submitButton.disabled = false;
+  };
+  monthSelect.addEventListener('change', () => { showStatus(''); fillDates(); });
+  submitButton.disabled = true;
+  loadAvailability().catch(() => showStatus('Booking service is unavailable. Please call the venue.'));
 
   document.querySelectorAll('.occasion').forEach((button) => {
     button.addEventListener('click', () => {
@@ -30,21 +70,26 @@ if (form) {
     });
   });
 
-  form.addEventListener('submit', (event) => {
+  form.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!form.reportValidity()) return;
-    const details = new FormData(form);
-    const message = [
-      'Hello, I would like to enquire about an event at Late Venutai Chavan Multipurpose Hall.',
-      `Name: ${details.get('name')}`,
-      `Phone: ${details.get('phone')}`,
-      `Event: ${details.get('event')}`,
-      details.get('email') ? `Email: ${details.get('email')}` : null,
-      details.get('date') ? `Date: ${details.get('date')}` : null,
-      details.get('guests') ? `Guests: ${details.get('guests')}` : null,
-      details.get('message') ? `Message: ${details.get('message')}` : null,
-    ].filter(Boolean).join('\n');
-    window.open(`https://wa.me/919359567494?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+    submitButton.disabled = true;
+    showStatus('Saving your request...');
+    try {
+      const response = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+      const result = await response.json();
+      showStatus(result.message || result.error || 'Please try again.');
+      if (response.ok) {
+        form.reset();
+        fillDates();
+      } else if (response.status === 409) {
+        await loadAvailability();
+      }
+    } catch {
+      showStatus('Could not save your request. Please call the venue.');
+    } finally {
+      submitButton.disabled = false;
+    }
   });
 }
 

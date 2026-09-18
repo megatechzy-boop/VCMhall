@@ -68,15 +68,18 @@
             <p class="hero-marathi" lang="mr">स्व. वेणुताई चव्हाण<br />बहुउद्देशीय सभागृह</p>
             <p class="hero-events">Weddings <span>|</span> Receptions <span>|</span> Birthdays <span>|</span><br class="hero-break" /> Naming Ceremonies <span>|</span> Corporate Events <span>|</span> And More...</p>
           </div>
-          <form class="enquiry-card" id="enquire" aria-labelledby="enquiry-title">
+          <form class="enquiry-card" id="enquire" action="booking.php" method="post" aria-labelledby="enquiry-title">
             <h2 id="enquiry-title">Plan Your Event</h2>
             <p>Get in touch with us for bookings<br />and availability</p>
             <label class="field"><svg class="icon"><use href="#i-user" /></svg><span class="sr-only">Your Name</span><input name="name" autocomplete="name" placeholder="Your Name" required /></label>
             <label class="field"><svg class="icon"><use href="#i-phone" /></svg><span class="sr-only">Phone Number</span><input name="phone" type="tel" autocomplete="tel" inputmode="tel" pattern="[0-9+() -]{10,18}" placeholder="Phone Number" required /></label>
             <label class="field"><svg class="icon"><use href="#i-calendar" /></svg><span class="sr-only">Select Event Type</span><select name="event" required><option value="" selected disabled>Select Event Type</option><option>Wedding</option><option>Engagement</option><option>Reception</option><option>Birthday</option><option>Naming Ceremony</option><option>Family Function</option><option>Corporate Event</option><option>Social Gathering</option><option>Other Event</option></select></label>
-            <label class="field"><svg class="icon"><use href="#i-calendar" /></svg><span class="sr-only">Event Date</span><input name="date" type="date" required /></label>
+            <label class="field"><svg class="icon"><use href="#i-calendar" /></svg><span class="sr-only">Event Month</span><select class="booking-month" aria-label="Event month" required><option value="">Loading months...</option></select></label>
+            <label class="field"><svg class="icon"><use href="#i-calendar" /></svg><span class="sr-only">Available Event Date</span><select name="date" class="booking-date" aria-label="Available event date" required><option value="">Select a month first</option></select></label>
             <label class="field"><svg class="icon"><use href="#i-message" /></svg><span class="sr-only">Message (Optional)</span><input name="message" placeholder="Message (Optional)" /></label>
+            <label class="booking-trap" aria-hidden="true">Leave this empty<input name="website" tabindex="-1" autocomplete="off" /></label>
             <button class="button button-maroon form-button" type="submit">Enquire Now <svg class="icon"><use href="#i-arrow" /></svg></button>
+            <p class="booking-status" role="status" aria-live="polite"></p>
             <p class="form-assurance">Quick Response <span>|</span> Best Rates <span>|</span> Personal Assistance</p>
           </form>
         </div>

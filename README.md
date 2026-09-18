@@ -1,6 +1,6 @@
 # Late Venutai Chavan Multipurpose Hall
 
-Dependency-free HTML, CSS, and JavaScript venue site with Home, About, Our Spaces, Events, Facilities, Gallery, and Contact pages.
+Venue site with HTML, one shared CSS file, JavaScript, and a PHP/SQLite booking backend. The pages cover Home, About, Our Spaces, Events, Facilities, Gallery, and Contact.
 The Events index and eight occasion pages cover weddings, engagements, receptions, birthdays, naming ceremonies, family functions, corporate events, and social gatherings.
 The About page is at `about.html`.
 The Facilities page is at `facilities.html`.
@@ -9,10 +9,10 @@ The Contact page is at `contact.html`.
 
 ## Run locally
 
-Open `index.html` in a browser, or serve this directory with any static web server. For example:
+Serve this directory with PHP 8.2+ and the `pdo_sqlite` extension. A static file server will show the pages but cannot save booking requests. For example:
 
 ```sh
-python -m http.server 8000
+php -S 127.0.0.1:8000 -t .
 ```
 
 Then open `http://localhost:8000`.
@@ -34,7 +34,7 @@ The About page follows the supplied reference with hall hero, portrait, inspirat
 
 ## Contact
 
-The Contact page follows the supplied reference with a venue hero, contact details, enquiry form, location panel, visit banner, and light footer. It uses crops of the supplied image for the hero and location map. The map opens Google Maps search for the shown Nigdi address; the site has no confirmed venue pin. The enquiry form uses the existing WhatsApp handoff and does not store data. No working email address was supplied, so the displayed domain is text and the form provides the online contact path. Working hours and nearby landmarks follow the reference and should be confirmed by the venue.
+The Contact page follows the supplied reference with a venue hero, contact details, enquiry form, location panel, visit banner, and light footer. It uses crops of the supplied image for the hero and location map. The map opens Google Maps search for the shown Nigdi address; the site has no confirmed venue pin. Its form now saves requests in the PHP backend. Working hours and nearby landmarks follow the reference and should be confirmed by the venue.
 
 ## Gallery
 
@@ -46,9 +46,20 @@ The Facilities page follows the supplied reference with a maroon hero, 12 amenit
 
 ## Our Spaces
 
-The page follows the supplied reference: cream and maroon hero, curved hall photograph, two large hall cards, three smaller dining/guest-room cards, booking banner and four-column footer. On phones the cards stack in one column and the navigation becomes a menu. `our-spaces.css` scopes the new layout to this page; both pages share `styles.css` and `script.js`.
+The page follows the supplied reference: cream and maroon hero, curved hall photograph, two large hall cards, three smaller dining/guest-room cards, booking banner and four-column footer. On phones the cards stack in one column and the navigation becomes a menu. All pages now load `styles.css`; page-specific selectors remain scoped by body class.
 
 All five photos and the lotus mark are reused from the existing site. The photographs are approximate matches, not the exact images in the new reference. Existing contact information and capacities are retained. Booking links open the Home page enquiry form. Each View Photos button opens the selected room image in the shared gallery, with previous/next buttons, arrow-key navigation and Escape to close. Only one existing image per room is available. Facebook and Instagram remain decorative because the repository provides no profile URLs; WhatsApp is linked.
+
+## Booking setup on cPanel
+
+Do not deploy the new booking forms until this setup is complete: without `booking-config.php`, the forms show a service-unavailable message. Use HTTPS, PHP 8.2+ with `pdo_sqlite`, writable PHP sessions, and a working PHP mail transport.
+
+1. Create a writable private folder **outside** `public_html`, for example `/home/CPANEL_USER/vcmhall-private/`. The SQLite file will be created there automatically.
+2. Copy `booking-config.example.php` to `booking-config.php` on the server. Set the absolute `database` path, a `password_hash()` value for `admin_password_hash`, and real `email_to` / `email_from` addresses. The filled config is ignored by Git. A cPanel mailbox such as `bookings@YOUR_DOMAIN` is suitable for both email fields.
+3. Open `/admin/` and sign in with the password used to generate the hash. Review pending requests, confirm or cancel them, and manually block dates already booked offline.
+4. Send a test request and check both the admin list and the mailbox. `accepted_by_mail_server` means PHP accepted the message; it does not prove inbox delivery.
+
+The Home and Contact forms submit to `booking.php`. A new request is **pending** and does not reserve a date. Confirming it, or manually blocking an offline booking, removes that entire date from the visitor date lists and rejects further requests for that date. Cancelling releases the date. The date lists cover the next 24 months. The public API returns dates only, never guest details. The database must stay outside the web document root.
 
 ## Check
 
@@ -56,8 +67,12 @@ All five photos and the lotus mark are reused from the existing site. The photog
 node --check script.js
 node --check gallery.js
 python tests/check_site.py
+python tests/test_booking.py
+php -l booking.php
+php -l booking-store.php
+php -l admin/index.php
 ```
 
 The static check validates local page links, section targets, image/script/style paths, unique IDs and all five photo controls. For a browser smoke check, open both pages, exercise the mobile menu, all five photo buttons, next/previous and Escape, and follow Book Now to the enquiry form. Check widths of 320, 390, 768, 1024 and 1440 pixels. Google Fonts is optional; the site includes system-font fallbacks.
 
-The enquiry form opens WhatsApp with a prefilled message to the contact number shown in the reference. No form data is stored on this site. The venue images in `assets/` were generated from the supplied page screenshot as visual guidance and should be replaced with approved venue photography when available.
+The venue images in `assets/` were generated from the supplied page screenshot as visual guidance and should be replaced with approved venue photography when available.
