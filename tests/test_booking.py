@@ -45,7 +45,7 @@ with tempfile.TemporaryDirectory() as temp:
     (public / "booking-config.php").write_text(
         "<?php return ['database' => " + php_literal(db_path.as_posix())
         + ", 'admin_password_hash' => " + php_literal(password_hash)
-        + ", 'email_to' => '', 'email_from' => ''];",
+        + ", 'email_to' => 'disabled-for-test', 'email_from' => ''];",
         encoding="utf-8",
     )
     with socket.socket() as sock:

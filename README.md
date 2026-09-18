@@ -55,7 +55,7 @@ All five photos and the lotus mark are reused from the existing site. The photog
 Do not deploy the new booking forms until this setup is complete: without `booking-config.php`, the forms show a service-unavailable message. Use HTTPS, PHP 8.2+ with `pdo_sqlite`, writable PHP sessions, and a working PHP mail transport.
 
 1. Create a writable private folder **outside** `public_html`, for example `/home/CPANEL_USER/vcmhall-private/`. The SQLite file will be created there automatically.
-2. Copy `booking-config.example.php` to `booking-config.php` on the server. Set the absolute `database` path, a `password_hash()` value for `admin_password_hash`, and real `email_to` / `email_from` addresses. The filled config is ignored by Git. A cPanel mailbox such as `bookings@YOUR_DOMAIN` is suitable for both email fields.
+2. Copy `booking-config.example.php` to `booking-config.php` on the server. Set the absolute `database` path and a `password_hash()` value for `admin_password_hash`. Booking notifications are addressed from and to `bookings@venutaihall.com`; confirm that this mailbox exists in cPanel. The filled config is ignored by Git.
 3. Open `/admin/` and sign in with the password used to generate the hash. Review pending requests, confirm or cancel them, and manually block dates already booked offline.
 4. Send a test request and check both the admin list and the mailbox. `accepted_by_mail_server` means PHP accepted the message; it does not prove inbox delivery.
 

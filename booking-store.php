@@ -60,8 +60,8 @@ function booking_valid_date(string $date): bool
 function booking_send_email(PDO $db, int $id, array $row): void
 {
     $config = booking_config();
-    $to = $config['email_to'] ?? '';
-    $from = $config['email_from'] ?? '';
+    $to = ($config['email_to'] ?? '') ?: 'bookings@venutaihall.com';
+    $from = ($config['email_from'] ?? '') ?: 'bookings@venutaihall.com';
     if (!filter_var($to, FILTER_VALIDATE_EMAIL) || !filter_var($from, FILTER_VALIDATE_EMAIL)) {
         return;
     }
