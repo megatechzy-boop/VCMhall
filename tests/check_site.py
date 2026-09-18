@@ -2,6 +2,7 @@
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
+from xml.etree import ElementTree
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -51,4 +52,12 @@ for slug in ("weddings", "engagements", "receptions", "birthdays", "naming-cerem
 assert "contact.html" in pages[ROOT / "index.html"].links, "Home must link to Contact"
 assert "#enquire" in pages[ROOT / "contact.html"].links, "Contact must link to its enquiry form"
 assert "index.html#enquire" in spaces.links, "Our Spaces must link to booking"
+namespace = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+sitemap = ElementTree.parse(ROOT / "sitemap.xml")
+urls = [element.text for element in sitemap.findall("s:url/s:loc", namespace)]
+expected_urls = {"https://venutaihall.com/"} | {
+    f"https://venutaihall.com/{path.name}" for path in pages if path.name != "index.html"
+}
+assert len(urls) == len(set(urls)) and set(urls) == expected_urls, "Sitemap must list every public HTML page once"
+assert "Sitemap: https://venutaihall.com/sitemap.xml" in (ROOT / "robots.txt").read_text(encoding="utf-8")
 print(f"PASS: {len(pages)} pages, {checked} local references, five room photo controls")

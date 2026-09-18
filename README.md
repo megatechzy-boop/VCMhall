@@ -26,7 +26,7 @@ Open `http://localhost:8000/events.html` to browse the event pages.
 
 ## Events
 
-The eight static event pages have distinct titles, descriptions, planning points, space recommendations, questions, and links to the shared enquiry form. They use existing venue images and facts already presented elsewhere on the site. The Events index links every page, and the main navigation links the index. No event-specific photo collection or pricing was supplied; replace generic venue photos and confirm availability, capacities, and technical specifications with the venue before making stronger claims. The site has no confirmed production domain, so a domain-specific sitemap and canonical URLs are deferred.
+The eight static event pages have distinct titles, descriptions, planning points, space recommendations, questions, and links to the shared enquiry form. They use existing venue images and facts already presented elsewhere on the site. The Events index links every page, and the main navigation links the index. No event-specific photo collection or pricing was supplied; replace generic venue photos and confirm availability, capacities, and technical specifications with the venue before making stronger claims. The production domain is `https://venutaihall.com`; `sitemap.xml` lists the 15 public pages and `robots.txt` points to it.
 
 ## About
 
