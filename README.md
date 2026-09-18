@@ -64,6 +64,10 @@ The Home and Contact forms submit to `booking.php`. A new request is **pending**
 
 If an earlier SQLite version was used for real bookings, move those records to MySQL before switching the live site; importing the empty schema alone does not preserve them.
 
+## Deploy with cPanel Git
+
+The confirmed document root for `venutaihall.com` is `public_html`. Clone the GitHub repository into a separate cPanel Git repository directory, then use **Update from Remote** followed by **Deploy HEAD Commit**. `.cpanel.yml` copies only the public HTML, CSS, JavaScript, images, booking PHP endpoints, admin page, `robots.txt`, and `sitemap.xml` into `$HOME/public_html/`. It does not copy tests, the SQL schema, or the example/private booking configuration. Set up `public_html/booking-config.php` separately as above; keep it off Git.
+
 ## Check
 
 ```sh

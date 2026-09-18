@@ -1,0 +1,8 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=$HOME/public_html/
+    - /bin/mkdir -p $DEPLOYPATH/admin
+    - /bin/cp -R assets $DEPLOYPATH
+    - /bin/cp *.html styles.css script.js gallery.js booking.php booking-store.php robots.txt sitemap.xml $DEPLOYPATH
+    - /bin/cp admin/index.php $DEPLOYPATH/admin/index.php
