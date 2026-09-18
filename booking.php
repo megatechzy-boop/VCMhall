@@ -15,7 +15,7 @@ function booking_response(int $status, array $data): never
 try {
     $db = booking_db();
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        $query = $db->prepare("SELECT event_date FROM bookings WHERE status IN ('confirmed', 'blocked') AND event_date >= ? ORDER BY event_date");
+        $query = $db->prepare('SELECT booked_date FROM bookings WHERE booked_date >= ? ORDER BY booked_date');
         $query->execute([booking_today()]);
         booking_response(200, ['today' => booking_today(), 'bookedDates' => $query->fetchAll(PDO::FETCH_COLUMN)]);
     }
@@ -48,7 +48,7 @@ try {
 
     $db->beginTransaction();
     try {
-        $check = $db->prepare("SELECT 1 FROM bookings WHERE event_date = ? AND status IN ('confirmed', 'blocked') LIMIT 1");
+        $check = $db->prepare('SELECT 1 FROM bookings WHERE booked_date = ? LIMIT 1');
         $check->execute([$row['event_date']]);
         if ($check->fetchColumn()) {
             $db->rollBack();

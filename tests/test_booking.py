@@ -1,10 +1,11 @@
-"""End-to-end check of the PHP request, admin confirmation, and date blocking flow."""
+"""End-to-end check of PHP/MySQL enquiry, admin and date blocking."""
 import http.cookiejar
 import json
+import os
 import re
+import secrets
 import shutil
 import socket
-import sqlite3
 import subprocess
 import tempfile
 import time
@@ -16,6 +17,19 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PHP = shutil.which("php") or r"C:\xampp\php\php.exe"
+DB_PHP = r"""
+$name = getenv('VCM_TEST_DB_NAME');
+if (!preg_match('/^vcm_test_[a-f0-9]{16}$/', $name)) { throw new Exception('Invalid test database name'); }
+$dsn = 'mysql:host=' . getenv('VCM_TEST_MYSQL_HOST') . ';port=' . getenv('VCM_TEST_MYSQL_PORT') . ';charset=utf8mb4';
+$db = new PDO($dsn, getenv('VCM_TEST_MYSQL_USER'), getenv('VCM_TEST_MYSQL_PASSWORD'), [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+if (getenv('VCM_TEST_ACTION') === 'create') {
+  $db->exec('CREATE DATABASE `' . $name . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+  $db->exec('USE `' . $name . '`');
+  $db->exec(file_get_contents(getenv('VCM_TEST_SCHEMA')));
+} else {
+  $db->exec('DROP DATABASE IF EXISTS `' . $name . '`');
+}
+"""
 
 
 def php_literal(value):
@@ -32,74 +46,95 @@ def request(opener, url, fields=None):
         return response.status, response.read().decode()
 
 
-with tempfile.TemporaryDirectory() as temp:
-    base = Path(temp)
-    public = base / "public"
-    private = base / "private"
-    (public / "admin").mkdir(parents=True)
-    private.mkdir()
-    for name in ("booking.php", "booking-store.php", "admin/index.php"):
-        shutil.copy2(ROOT / name, public / name)
-    password_hash = subprocess.check_output([PHP, "-r", 'echo password_hash("test-password", PASSWORD_DEFAULT);'], text=True)
-    db_path = private / "bookings.sqlite"
-    (public / "booking-config.php").write_text(
-        "<?php return ['database' => " + php_literal(db_path.as_posix())
-        + ", 'admin_password_hash' => " + php_literal(password_hash)
-        + ", 'email_to' => 'disabled-for-test', 'email_from' => ''];",
-        encoding="utf-8",
-    )
-    with socket.socket() as sock:
-        sock.bind(("127.0.0.1", 0))
-        port = sock.getsockname()[1]
-    log_path = base / "server.log"
-    log = log_path.open("w", encoding="utf-8")
-    server = subprocess.Popen(
-        [PHP, "-d", f"session.save_path={private}", "-S", f"127.0.0.1:{port}", "-t", str(public)],
-        stdout=subprocess.DEVNULL, stderr=log,
-    )
-    try:
-        url = f"http://127.0.0.1:{port}"
-        opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
-        for _ in range(50):
+def run_test(env):
+    with tempfile.TemporaryDirectory() as temp:
+        base = Path(temp)
+        public = base / "public"
+        private = base / "private"
+        (public / "admin").mkdir(parents=True)
+        private.mkdir()
+        for name in ("booking.php", "booking-store.php", "admin/index.php"):
+            shutil.copy2(ROOT / name, public / name)
+        password_hash = subprocess.check_output([PHP, "-r", 'echo password_hash("test-password", PASSWORD_DEFAULT);'], text=True)
+        (public / "booking-config.php").write_text(
+            "<?php return ['mysql' => ['host' => " + php_literal(env["VCM_TEST_MYSQL_HOST"])
+            + ", 'port' => " + str(int(env["VCM_TEST_MYSQL_PORT"]))
+            + ", 'name' => " + php_literal(env["VCM_TEST_DB_NAME"])
+            + ", 'user' => " + php_literal(env["VCM_TEST_MYSQL_USER"])
+            + ", 'password' => " + php_literal(env["VCM_TEST_MYSQL_PASSWORD"])
+            + "], 'admin_password_hash' => " + php_literal(password_hash)
+            + ", 'email_to' => 'disabled-for-test', 'email_from' => ''];",
+            encoding="utf-8",
+        )
+        with socket.socket() as sock:
+            sock.bind(("127.0.0.1", 0))
+            port = sock.getsockname()[1]
+        log_path = base / "server.log"
+        with log_path.open("w", encoding="utf-8") as log:
+            server = subprocess.Popen(
+                [PHP, "-d", f"session.save_path={private}", "-S", f"127.0.0.1:{port}", "-t", str(public)],
+                stdout=subprocess.DEVNULL, stderr=log,
+            )
             try:
-                if request(opener, url + "/booking.php")[0] == 200:
-                    break
-            except urllib.error.URLError:
-                time.sleep(0.1)
-        else:
-            raise AssertionError("PHP test server did not start")
+                url = f"http://127.0.0.1:{port}"
+                opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+                for _ in range(50):
+                    try:
+                        if request(opener, url + "/booking.php")[0] == 200:
+                            break
+                    except urllib.error.URLError:
+                        time.sleep(0.1)
+                else:
+                    raise AssertionError("PHP test server did not start")
 
-        event_date = (date.today() + timedelta(days=14)).isoformat()
-        fields = {"name": "Test Guest", "phone": "9876543210", "event": "Wedding", "date": event_date}
-        status, body = request(opener, url + "/booking.php", fields)
-        assert status == 201 and body, f"{status} {body!r} {log_path.read_text(encoding='utf-8')}"
-        booking_id = json.loads(body)["reference"]
-        assert event_date not in json.loads(request(opener, url + "/booking.php")[1])["bookedDates"]
+                event_date = (date.today() + timedelta(days=14)).isoformat()
+                fields = {"name": "Test Guest", "phone": "9876543210", "event": "Wedding", "date": event_date}
+                status, body = request(opener, url + "/booking.php", fields)
+                assert status == 201, f"{status} {body!r} {log_path.read_text(encoding='utf-8')}"
+                first_id = json.loads(body)["reference"]
+                status, body = request(opener, url + "/booking.php", {**fields, "name": "Second Guest"})
+                assert status == 201, f"Second pending enquiry: {status} {body!r}"
+                second_id = json.loads(body)["reference"]
+                def booked():
+                    return json.loads(request(opener, url + "/booking.php")[1])["bookedDates"]
+                assert event_date not in booked()
 
-        status, login = request(opener, url + "/admin/")
-        assert status == 200
-        token = re.search(r'name="csrf" value="([^"]+)"', login).group(1)
-        status, panel = request(opener, url + "/admin/", {"csrf": token, "password": "test-password", "action": "login"})
-        assert status == 200 and "Test Guest" in panel
-        status, panel = request(opener, url + "/admin/", {"csrf": token, "id": str(booking_id), "action": "confirm"})
-        assert status == 200 and "Booking updated." in panel
-        assert event_date in json.loads(request(opener, url + "/booking.php")[1])["bookedDates"]
-        assert request(opener, url + "/booking.php", fields)[0] == 409
+                status, login = request(opener, url + "/admin/")
+                assert status == 200
+                token = re.search(r'name="csrf" value="([^"]+)"', login).group(1)
+                def action(**fields):
+                    return request(opener, url + "/admin/", {"csrf": token, **fields})
+                status, panel = action(password="test-password", action="login")
+                assert status == 200 and "Test Guest" in panel and "Second Guest" in panel
+                assert "Booking updated." in action(id=str(first_id), action="confirm")[1]
+                assert event_date in booked()
+                assert request(opener, url + "/booking.php", fields)[0] == 409
+                assert "This date is already booked or blocked." in action(id=str(second_id), action="confirm")[1]
+                assert "Booking updated." in action(id=str(first_id), action="cancel")[1]
+                assert event_date not in booked()
+                assert "Booking updated." in action(id=str(second_id), action="confirm")[1]
+                assert "Booking updated." in action(id=str(second_id), action="cancel")[1]
+                assert "Date blocked." in action(date=event_date, action="block")[1]
+                assert event_date in booked()
+                assert "That date is already booked or blocked." in action(date=event_date, action="block")[1]
+                assert request(opener, url + "/booking.php", {**fields, "phone": "bad"})[0] == 422
+                print("PASS: MySQL enquiry, admin confirmation, unique date, cancellation and manual block")
+            finally:
+                server.terminate()
+                server.wait(timeout=5)
 
-        status, panel = request(opener, url + "/admin/", {"csrf": token, "id": str(booking_id), "action": "cancel"})
-        assert status == 200 and "Booking updated." in panel
-        assert event_date not in json.loads(request(opener, url + "/booking.php")[1])["bookedDates"]
-        status, panel = request(opener, url + "/admin/", {"csrf": token, "date": event_date, "action": "block"})
-        assert status == 200 and "Date blocked." in panel
-        assert event_date in json.loads(request(opener, url + "/booking.php")[1])["bookedDates"]
-        assert request(opener, url + "/booking.php", {**fields, "phone": "bad"})[0] == 422
-        db = sqlite3.connect(db_path)
-        try:
-            assert db.execute("SELECT COUNT(*) FROM bookings WHERE status = 'blocked'").fetchone()[0] == 1
-        finally:
-            db.close()
-        print("PASS: PHP request, admin confirmation, duplicate rejection, cancellation and manual block")
-    finally:
-        server.terminate()
-        server.wait(timeout=5)
-        log.close()
+
+required = ("VCM_TEST_MYSQL_HOST", "VCM_TEST_MYSQL_PORT", "VCM_TEST_MYSQL_USER", "VCM_TEST_MYSQL_PASSWORD")
+missing = [name for name in required if name not in os.environ]
+if missing:
+    raise SystemExit("Set isolated MySQL test connection variables: " + ", ".join(missing))
+test_env = os.environ.copy()
+test_env["VCM_TEST_DB_NAME"] = "vcm_test_" + secrets.token_hex(8)
+test_env["VCM_TEST_SCHEMA"] = str(ROOT / "schema.sql")
+test_env["VCM_TEST_ACTION"] = "create"
+subprocess.run([PHP, "-r", DB_PHP], env=test_env, check=True)
+try:
+    run_test(test_env)
+finally:
+    test_env["VCM_TEST_ACTION"] = "drop"
+    subprocess.run([PHP, "-r", DB_PHP], env=test_env, check=True)

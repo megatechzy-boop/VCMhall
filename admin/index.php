@@ -64,11 +64,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $notice = 'Choose a valid future date.';
         } else {
             try {
-                $insert = $db->prepare("INSERT INTO bookings (name, phone, event_type, event_date, message, status, source) VALUES ('Admin block', '', 'Manual block', ?, '', 'blocked', 'admin')");
-                $insert->execute([$date]);
+                $insert = $db->prepare("INSERT INTO bookings (name, phone, event_type, event_date, booked_date, message, status, source) VALUES ('Admin block', '', 'Manual block', ?, ?, '', 'blocked', 'admin')");
+                $insert->execute([$date, $date]);
                 $notice = 'Date blocked.';
-            } catch (PDOException) {
-                $notice = 'That date is already booked or blocked.';
+            } catch (PDOException $error) {
+                error_log('Booking admin block error: ' . $error->getMessage());
+                $notice = $error->getCode() === '23000' ? 'That date is already booked or blocked.' : 'Could not block the date. Try again.';
             }
         }
     } elseif ($loggedIn && in_array($action, ['confirm', 'cancel'], true)) {
@@ -77,12 +78,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $notice = 'Invalid booking.';
         } else {
             try {
-                $target = $action === 'confirm' ? 'confirmed' : 'cancelled';
-                $query = $db->prepare("UPDATE bookings SET status = ? WHERE id = ? AND status IN ('pending', 'confirmed', 'blocked')");
-                $query->execute([$target, $id]);
+                $query = $db->prepare($action === 'confirm'
+                    ? "UPDATE bookings SET status = 'confirmed', booked_date = event_date WHERE id = ? AND status = 'pending'"
+                    : "UPDATE bookings SET status = 'cancelled', booked_date = NULL WHERE id = ? AND status IN ('pending', 'confirmed', 'blocked')");
+                $query->execute([$id]);
                 $notice = $query->rowCount() ? 'Booking updated.' : 'Booking could not be updated.';
-            } catch (PDOException) {
-                $notice = 'This date is already confirmed or blocked.';
+            } catch (PDOException $error) {
+                error_log('Booking admin update error: ' . $error->getMessage());
+                $notice = $error->getCode() === '23000' ? 'This date is already booked or blocked.' : 'Could not update the booking. Try again.';
             }
         }
     }

@@ -1,4 +1,1 @@
 /booking-config.php
-*.sqlite
-*.sqlite-shm
-*.sqlite-wal

@@ -16,34 +16,22 @@ function booking_config(): array
 
 function booking_db(): PDO
 {
-    $path = booking_config()['database'] ?? '';
-    if (is_string($path)) {
-        $path = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
+    $config = booking_config()['mysql'] ?? [];
+    $host = $config['host'] ?? '';
+    $port = (int) ($config['port'] ?? 3306);
+    $name = $config['name'] ?? '';
+    $user = $config['user'] ?? '';
+    $password = $config['password'] ?? '';
+    if (!is_string($host) || $host === '' || !is_string($name) || $name === '' || !is_string($user) || $user === ''
+        || !is_string($password) || $port < 1 || $port > 65535) {
+        throw new RuntimeException('MySQL booking configuration is incomplete.');
     }
-    $folder = is_string($path) ? realpath(dirname($path)) : false;
-    $root = realpath($_SERVER['DOCUMENT_ROOT'] ?? __DIR__);
-    if (!$folder || !is_writable($folder) || !is_string($path) || !str_starts_with($path, $folder . DIRECTORY_SEPARATOR)
-        || ($root && ($folder === $root || str_starts_with($folder . DIRECTORY_SEPARATOR, $root . DIRECTORY_SEPARATOR)))) {
-        throw new RuntimeException('Booking database must be in a writable folder outside the public website.');
-    }
-    $db = new PDO('sqlite:' . $path, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
-    $db->exec('PRAGMA busy_timeout = 5000');
-    $db->exec("CREATE TABLE IF NOT EXISTS bookings (
-        id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL,
-        phone TEXT NOT NULL,
-        email TEXT NOT NULL DEFAULT '',
-        event_type TEXT NOT NULL,
-        event_date TEXT NOT NULL,
-        guests INTEGER,
-        message TEXT NOT NULL DEFAULT '',
-        status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'blocked', 'cancelled')),
-        source TEXT NOT NULL DEFAULT 'website',
-        email_state TEXT NOT NULL DEFAULT 'not_configured',
-        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )");
-    $db->exec("CREATE UNIQUE INDEX IF NOT EXISTS one_booking_per_date ON bookings(event_date) WHERE status IN ('confirmed', 'blocked')");
-    return $db;
+    return new PDO(
+        "mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4",
+        $user,
+        $password,
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false]
+    );
 }
 
 function booking_today(): string

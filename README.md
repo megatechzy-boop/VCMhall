@@ -1,6 +1,6 @@
 # Late Venutai Chavan Multipurpose Hall
 
-Venue site with HTML, one shared CSS file, JavaScript, and a PHP/SQLite booking backend. The pages cover Home, About, Our Spaces, Events, Facilities, Gallery, and Contact.
+Venue site with HTML, one shared CSS file, JavaScript, and a PHP/MySQL booking backend. The pages cover Home, About, Our Spaces, Events, Facilities, Gallery, and Contact.
 The Events index and eight occasion pages cover weddings, engagements, receptions, birthdays, naming ceremonies, family functions, corporate events, and social gatherings.
 The About page is at `about.html`.
 The Facilities page is at `facilities.html`.
@@ -9,7 +9,7 @@ The Contact page is at `contact.html`.
 
 ## Run locally
 
-Serve this directory with PHP 8.2+ and the `pdo_sqlite` extension. A static file server will show the pages but cannot save booking requests. For example:
+Serve this directory with PHP 8.2+, the `pdo_mysql` extension, and a MySQL/MariaDB database. Import `schema.sql` and configure `booking-config.php` as described below before testing bookings. A static file server will show the pages but cannot save booking requests. For example:
 
 ```sh
 php -S 127.0.0.1:8000 -t .
@@ -52,14 +52,17 @@ All five photos and the lotus mark are reused from the existing site. The photog
 
 ## Booking setup on cPanel
 
-Do not deploy the new booking forms until this setup is complete: without `booking-config.php`, the forms show a service-unavailable message. Use HTTPS, PHP 8.2+ with `pdo_sqlite`, writable PHP sessions, and a working PHP mail transport.
+Do not deploy the booking forms until this setup is complete: without `booking-config.php`, the forms show a service-unavailable message. Use HTTPS, PHP 8.2+ with `pdo_mysql`, writable PHP sessions, and a working PHP mail transport.
 
-1. Create a writable private folder **outside** `public_html`, for example `/home/CPANEL_USER/vcmhall-private/`. The SQLite file will be created there automatically.
-2. Copy `booking-config.example.php` to `booking-config.php` on the server. Set the absolute `database` path and a `password_hash()` value for `admin_password_hash`. Booking notifications are addressed from and to `bookings@venutaihall.com`; confirm that this mailbox exists in cPanel. The filled config is ignored by Git.
-3. Open `/admin/` and sign in with the password used to generate the hash. Review pending requests, confirm or cancel them, and manually block dates already booked offline.
-4. Send a test request and check both the admin list and the mailbox. `accepted_by_mail_server` means PHP accepted the message; it does not prove inbox delivery.
+1. In cPanel's MySQL Database Wizard, create a dedicated database and user with full privileges on that database. Import `schema.sql` into the database using phpMyAdmin.
+2. Copy `booking-config.example.php` to `booking-config.php` on the server. Fill in the `mysql` host, port, database name, username and password; cPanel commonly prefixes database and user names with the account name. Generate `admin_password_hash` with `php -r "echo password_hash('YOUR_STRONG_PASSWORD', PASSWORD_DEFAULT), PHP_EOL;"` and paste the resulting hash. The filled config is ignored by Git. Keep its permissions restricted and never commit it.
+3. Confirm that `bookings@venutaihall.com` exists in cPanel and that PHP mail can send from it. Booking notifications use this address as sender and recipient unless changed in config.
+4. Open `/admin/` and sign in with the password used to generate the hash. Review pending requests, confirm or cancel them, and manually block dates already booked offline.
+5. Send a test request and check both the admin list and the mailbox. `accepted_by_mail_server` means PHP accepted the message; it does not prove inbox delivery.
 
-The Home and Contact forms submit to `booking.php`. A new request is **pending** and does not reserve a date. Confirming it, or manually blocking an offline booking, removes that entire date from the visitor date lists and rejects further requests for that date. Cancelling releases the date. The date lists cover the next 24 months. The public API returns dates only, never guest details. The database must stay outside the web document root.
+The Home and Contact forms submit to `booking.php`. A new request is **pending** and does not reserve a date. Confirming it, or manually blocking an offline booking, removes that entire date from the visitor date lists and rejects further requests for that date. Cancelling releases the date. The date lists cover the next 24 months. The public API returns dates only, never guest details. MySQL credentials belong only in the ignored server config; database access must be limited to the dedicated user.
+
+If an earlier SQLite version was used for real bookings, move those records to MySQL before switching the live site; importing the empty schema alone does not preserve them.
 
 ## Check
 
@@ -74,5 +77,7 @@ php -l admin/index.php
 ```
 
 The static check validates local page links, section targets, image/script/style paths, unique IDs and all five photo controls. For a browser smoke check, open both pages, exercise the mobile menu, all five photo buttons, next/previous and Escape, and follow Book Now to the enquiry form. Check widths of 320, 390, 768, 1024 and 1440 pixels. Google Fonts is optional; the site includes system-font fallbacks.
+
+The booking integration test requires `VCM_TEST_MYSQL_HOST`, `VCM_TEST_MYSQL_PORT`, `VCM_TEST_MYSQL_USER`, and `VCM_TEST_MYSQL_PASSWORD` environment variables. Use an isolated local MySQL/MariaDB instance: the test user must be able to create and drop its temporary `vcm_test_*` database. An empty password still needs `VCM_TEST_MYSQL_PASSWORD` set to an empty string. Never point this test at production.
 
 The venue images in `assets/` were generated from the supplied page screenshot as visual guidance and should be replaced with approved venue photography when available.
