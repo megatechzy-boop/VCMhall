@@ -1,6 +1,7 @@
 # Late Venutai Chavan Multipurpose Hall
 
-Dependency-free HTML, CSS, and JavaScript venue site with Home, About, Our Spaces, Facilities, Gallery, and Contact pages.
+Dependency-free HTML, CSS, and JavaScript venue site with Home, About, Our Spaces, Events, Facilities, Gallery, and Contact pages.
+The Events index and seven occasion pages cover weddings, receptions, birthdays, naming ceremonies, family functions, corporate events, and social gatherings.
 The About page is at `about.html`.
 The Facilities page is at `facilities.html`.
 The Gallery page is at `gallery.html`.
@@ -21,6 +22,11 @@ Open `http://localhost:8000/our-spaces.html` for the Our Spaces page. There is n
 Open `http://localhost:8000/facilities.html` for the Facilities page.
 Open `http://localhost:8000/gallery.html` for the Gallery page.
 Open `http://localhost:8000/contact.html` for the Contact page.
+Open `http://localhost:8000/events.html` to browse the event pages.
+
+## Events
+
+The seven static event pages have distinct titles, descriptions, planning points, space recommendations, questions, and links to the shared enquiry form. They use existing venue images and facts already presented elsewhere on the site. The Events index links every page, and the main navigation links the index. No event-specific photo collection or pricing was supplied; replace generic venue photos and confirm availability, capacities, and technical specifications with the venue before making stronger claims. The site has no confirmed production domain, so a domain-specific sitemap and canonical URLs are deferred.
 
 ## About
 

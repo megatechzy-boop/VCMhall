@@ -44,6 +44,10 @@ spaces = pages[ROOT / "our-spaces.html"]
 assert len(spaces.photos) == 5 and len(set(spaces.photos)) == 5, "Expected five distinct room photos"
 assert "our-spaces.html" in pages[ROOT / "index.html"].links, "Home must link to Our Spaces"
 assert "about.html" in pages[ROOT / "index.html"].links, "Home must link to About"
+assert "events.html" in pages[ROOT / "index.html"].links, "Home must link to Events"
+for slug in ("weddings", "receptions", "birthdays", "naming-ceremonies", "family-functions", "corporate-events", "social-gatherings"):
+    assert f"{slug}.html" in pages[ROOT / "events.html"].links, f"Events must link to {slug}"
+    assert "contact.html#enquire" in pages[ROOT / f"{slug}.html"].links, f"{slug} must link to enquiry"
 assert "contact.html" in pages[ROOT / "index.html"].links, "Home must link to Contact"
 assert "#enquire" in pages[ROOT / "contact.html"].links, "Contact must link to its enquiry form"
 assert "index.html#enquire" in spaces.links, "Our Spaces must link to booking"
