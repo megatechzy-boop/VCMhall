@@ -4,8 +4,9 @@ CREATE TABLE bookings (
     phone TEXT NOT NULL,
     email TEXT NOT NULL DEFAULT '',
     event_type TEXT NOT NULL,
+    hall TEXT NOT NULL DEFAULT 'big' CHECK (hall IN ('small','big')),
     event_date TEXT NOT NULL,
-    booked_date TEXT UNIQUE,
+    booked_date TEXT,
     guests INTEGER,
     message TEXT NOT NULL DEFAULT '',
     status TEXT NOT NULL DEFAULT 'pending',
@@ -19,7 +20,8 @@ CREATE TABLE bookings (
     follow_up_completed_at TEXT,
     confirmed_at TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (booked_date, hall)
 );
 CREATE INDEX status_event_date_index ON bookings (status, event_date);
 CREATE INDEX record_type_status_index ON bookings (record_type, status);

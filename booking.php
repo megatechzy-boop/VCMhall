@@ -15,9 +15,11 @@ function booking_response(int $status, array $data): never
 try {
     $db = booking_db();
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        $query = $db->prepare('SELECT booked_date FROM bookings WHERE booked_date >= ? ORDER BY booked_date');
-        $query->execute([booking_today()]);
-        booking_response(200, ['today' => booking_today(), 'bookedDates' => $query->fetchAll(PDO::FETCH_COLUMN)]);
+        $hall = strtolower(trim((string) ($_GET['hall'] ?? 'big')));
+        if (!in_array($hall, ['small', 'big'], true)) booking_response(422, ['error' => 'Choose a valid hall.']);
+        $query = $db->prepare('SELECT booked_date FROM bookings WHERE hall = ? AND booked_date >= ? ORDER BY booked_date');
+        $query->execute([$hall, booking_today()]);
+        booking_response(200, ['today' => booking_today(), 'hall' => $hall, 'bookedDates' => $query->fetchAll(PDO::FETCH_COLUMN)]);
     }
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         header('Allow: GET, POST');
@@ -32,6 +34,7 @@ try {
         'phone' => trim((string) ($_POST['phone'] ?? '')),
         'email' => trim((string) ($_POST['email'] ?? '')),
         'event_type' => trim((string) ($_POST['event'] ?? '')),
+        'hall' => strtolower(trim((string) ($_POST['hall'] ?? 'big'))),
         'event_date' => trim((string) ($_POST['date'] ?? '')),
         'guests' => trim((string) ($_POST['guests'] ?? '')),
         'message' => trim((string) ($_POST['message'] ?? '')),
@@ -39,23 +42,24 @@ try {
     $events = ['Wedding', 'Engagement', 'Reception', 'Birthday', 'Naming Ceremony', 'Family Function', 'Corporate Event', 'Social Gathering', 'Venue Visit', 'Other Event'];
     if ($row['name'] === '' || strlen($row['name']) > 120 || !preg_match('/^[0-9+() -]{10,18}$/', $row['phone'])
         || ($row['email'] !== '' && (!filter_var($row['email'], FILTER_VALIDATE_EMAIL) || strlen($row['email']) > 254))
-        || !in_array($row['event_type'], $events, true) || !booking_valid_date($row['event_date'])
+        || !in_array($row['event_type'], $events, true) || !in_array($row['hall'], ['small', 'big'], true) || !booking_valid_date($row['event_date'])
         || ($row['guests'] !== '' && (!ctype_digit($row['guests']) || (int) $row['guests'] < 1 || (int) $row['guests'] > 10000))
         || strlen($row['message']) > 2000) {
         booking_response(422, ['error' => 'Please check the name, phone, event, date and other details.']);
     }
     $row['guests'] = $row['guests'] === '' ? null : (int) $row['guests'];
+    if (!in_array($row['hall'], ['small', 'big'], true)) booking_response(422, ['error' => 'Please choose a valid hall.']);
 
     $db->beginTransaction();
     try {
-        $check = $db->prepare('SELECT 1 FROM bookings WHERE booked_date = ? LIMIT 1');
-        $check->execute([$row['event_date']]);
+        $check = $db->prepare('SELECT 1 FROM bookings WHERE booked_date = ? AND hall = ? LIMIT 1');
+        $check->execute([$row['event_date'], $row['hall']]);
         if ($check->fetchColumn()) {
             $db->rollBack();
             booking_response(409, ['error' => 'This date is already booked. Please choose another date.']);
         }
-        $insert = $db->prepare('INSERT INTO bookings (name, phone, email, event_type, event_date, guests, message) VALUES (?, ?, ?, ?, ?, ?, ?)');
-        $insert->execute([$row['name'], $row['phone'], $row['email'], $row['event_type'], $row['event_date'], $row['guests'], $row['message']]);
+        $insert = $db->prepare('INSERT INTO bookings (name, phone, email, event_type, hall, event_date, guests, message) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        $insert->execute([$row['name'], $row['phone'], $row['email'], $row['event_type'], $row['hall'], $row['event_date'], $row['guests'], $row['message']]);
         $id = (int) $db->lastInsertId();
         $activity = $db->prepare("INSERT INTO booking_activity (booking_id, action, details) VALUES (?, 'enquiry_created', 'Website enquiry received')");
         $activity->execute([$id]);

@@ -61,6 +61,11 @@ function booking_valid_date(string $date): bool
     return $value !== false && $value->format('Y-m-d') === $date && $date >= booking_today();
 }
 
+function booking_hall_for_guests(?int $guests): string
+{
+    return $guests !== null && $guests >= 1 && $guests <= 350 ? 'small' : 'big';
+}
+
 function booking_send_email(PDO $db, int $id, array $row): void
 {
     $config = booking_config();
@@ -76,6 +81,7 @@ function booking_send_email(PDO $db, int $id, array $row): void
         'Phone: ' . $row['phone'],
         'Email: ' . $row['email'],
         'Event: ' . $row['event_type'],
+        'Hall: ' . ucfirst($row['hall'] ?? 'big') . ' Hall',
         'Date: ' . $row['event_date'],
         'Guests: ' . ($row['guests'] ?? ''),
         'Message: ' . $row['message'],

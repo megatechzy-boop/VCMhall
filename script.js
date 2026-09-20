@@ -18,6 +18,7 @@ mainNav.querySelectorAll('a').forEach((link) => link.addEventListener('click', (
 const form = document.querySelector('.enquiry-card');
 if (form) {
   const eventSelect = form.elements.event;
+  const hallSelect = form.elements.hall;
   const monthSelect = form.querySelector('.booking-month');
   const dateSelect = form.elements.date;
   const submitButton = form.querySelector('[type="submit"]');
@@ -42,7 +43,7 @@ if (form) {
     if (dateSelect.options.length === 1) showStatus('No available dates this month. Choose another month.');
   };
   const loadAvailability = async () => {
-    const response = await fetch(form.action, { cache: 'no-store' });
+    const response = await fetch(`${form.action}?hall=${encodeURIComponent(hallSelect.value)}`, { cache: 'no-store' });
     if (!response.ok) throw new Error('Availability unavailable');
     const data = await response.json();
     bookedDates = new Set(data.bookedDates);
@@ -59,6 +60,7 @@ if (form) {
     submitButton.disabled = false;
   };
   monthSelect.addEventListener('change', () => { showStatus(''); fillDates(); });
+  hallSelect.addEventListener('change', () => { showStatus(''); loadAvailability().catch(() => showStatus('Availability is unavailable. Please call the venue.')); });
   submitButton.disabled = true;
   loadAvailability().catch(() => showStatus('Booking service is unavailable. Please call the venue.'));
 

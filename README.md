@@ -68,6 +68,8 @@ Then import `migrations/20260919_enquiries.sql` to enable the dedicated Enquirie
 
 Finally import `migrations/20260920_settings.sql` to enable database-backed venue, event type, payment, notification, template, system and website-popup settings. Credentials remain in `booking-config.php`; the database never stores MySQL or admin-password secrets. Popup uploads are validated JPG/PNG/WebP files stored under `assets/popups/`.
 
+Import `migrations/20260920_two_halls.sql` after the other migrations to enable independent Small Hall and Big Hall availability. Existing records are assigned to Big Hall; new records choose a hall in the booking form, so the same date may be booked once per hall.
+
 The dashboard calculates every summary from MySQL. It supports status/source/date/text filters, a monthly availability calendar, a non-navigating detail drawer, enquiry conversion, up to five payment entries, follow-up scheduling, internal notes, and filter-aware Excel/PDF exports. WhatsApp actions open `wa.me`; email follow-ups reuse `email_from` from `booking-config.php`.
 
 The Home and Contact forms submit to `booking.php`. A new request is **pending** and does not reserve a date. Confirming it, or manually blocking an offline booking, removes that entire date from the visitor date lists and rejects further requests for that date. Cancelling releases the date. The date lists cover the next 24 months. The public API returns dates only, never guest details. MySQL credentials belong only in the ignored server config; database access must be limited to the dedicated user.

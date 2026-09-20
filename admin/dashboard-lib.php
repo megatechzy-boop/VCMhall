@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+const ADMIN_HALLS = ['small', 'big'];
+
 function admin_text_length(string $value): int
 {
     return function_exists('mb_strlen') ? mb_strlen($value) : strlen($value);
@@ -16,11 +18,11 @@ function admin_schema_ready(PDO $db): bool
     if ($db->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
         $tables = $db->query("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name IN ('booking_payments', 'booking_activity')");
         $columns = array_column($db->query("PRAGMA table_info(bookings)")->fetchAll(), 'name');
-        return (int) $tables->fetchColumn() === 2 && count(array_intersect(['total_amount', 'internal_notes', 'follow_up_at', 'confirmed_at'], $columns)) === 4;
+        return (int) $tables->fetchColumn() === 2 && count(array_intersect(['total_amount', 'internal_notes', 'follow_up_at', 'confirmed_at', 'hall'], $columns)) === 5;
     }
-    $query = $db->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'bookings' AND COLUMN_NAME IN ('total_amount', 'internal_notes', 'follow_up_at', 'confirmed_at')");
+    $query = $db->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'bookings' AND COLUMN_NAME IN ('total_amount', 'internal_notes', 'follow_up_at', 'confirmed_at', 'hall')");
     $tables = $db->query("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('booking_payments', 'booking_activity')");
-    return (int) $query->fetchColumn() === 4 && (int) $tables->fetchColumn() === 2;
+    return (int) $query->fetchColumn() === 5 && (int) $tables->fetchColumn() === 2;
 }
 
 function admin_activity(PDO $db, int $bookingId, string $action, string $details = ''): void
@@ -46,8 +48,8 @@ function admin_convert_enquiry(PDO $db, int $enquiryId): int
         $notesQuery = $db->prepare('SELECT note FROM enquiry_notes WHERE enquiry_id = ? ORDER BY created_at, id');
         $notesQuery->execute([$enquiryId]);
         $notes = implode("\n\n", $notesQuery->fetchAll(PDO::FETCH_COLUMN));
-        $insert = $db->prepare("INSERT INTO bookings (name, phone, email, event_type, event_date, booked_date, guests, message, status, record_type, enquiry_id, source, total_amount, internal_notes, confirmed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', 'booking', ?, ?, ?, ?, CURRENT_TIMESTAMP)");
-        $insert->execute([$enquiry['name'], $enquiry['phone'], $enquiry['email'], $enquiry['event_type'], $enquiry['event_date'], $enquiry['event_date'], $enquiry['guests'], $enquiry['message'], $enquiryId, $enquiry['source'], $enquiry['total_amount'], $notes ?: $enquiry['internal_notes']]);
+        $insert = $db->prepare("INSERT INTO bookings (name, phone, email, event_type, hall, event_date, booked_date, guests, message, status, record_type, enquiry_id, source, total_amount, internal_notes, confirmed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', 'booking', ?, ?, ?, ?, CURRENT_TIMESTAMP)");
+        $insert->execute([$enquiry['name'], $enquiry['phone'], $enquiry['email'], $enquiry['event_type'], $enquiry['hall'], $enquiry['event_date'], $enquiry['event_date'], $enquiry['guests'], $enquiry['message'], $enquiryId, $enquiry['source'], $enquiry['total_amount'], $notes ?: $enquiry['internal_notes']]);
         $bookingId = (int) $db->lastInsertId();
         $update = $db->prepare("UPDATE bookings SET status = 'converted', booked_date = NULL, follow_up_completed_at = COALESCE(follow_up_completed_at, CURRENT_TIMESTAMP) WHERE id = ?");
         $update->execute([$enquiryId]);
@@ -78,12 +80,14 @@ function admin_filter_input(array $input): array
     $sources = ['website', 'whatsapp', 'instagram', 'phone', 'walk-in', 'other'];
     $tab = strtolower(trim((string) ($input['tab'] ?? 'all')));
     $source = strtolower(trim((string) ($input['source'] ?? '')));
+    $hall = strtolower(trim((string) ($input['hall'] ?? '')));
     $date = trim((string) ($input['date'] ?? ''));
     return [
         'tab' => in_array($tab, $tabs, true) ? $tab : 'all',
         'q' => admin_text_cut(trim((string) ($input['q'] ?? '')), 120),
         'date' => preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) ? $date : '',
         'source' => in_array($source, $sources, true) ? $source : '',
+        'hall' => in_array($hall, ADMIN_HALLS, true) ? $hall : '',
     ];
 }
 
@@ -108,6 +112,7 @@ function admin_filter_sql(array $filters, array &$params): string
         $where[] = "CASE WHEN b.source = 'admin' THEN 'other' ELSE b.source END = ?";
         $params[] = $filters['source'];
     }
+    if ($filters['hall'] !== '') { $where[] = 'b.hall = ?'; $params[] = $filters['hall']; }
     return $where ? ' WHERE ' . implode(' AND ', $where) : '';
 }
 
@@ -150,12 +155,15 @@ function admin_metrics(PDO $db): array
     return array_map(static fn($value) => $value ?? 0, $metrics);
 }
 
-function admin_calendar(PDO $db, DateTimeImmutable $month): array
+function admin_calendar(PDO $db, DateTimeImmutable $month, string $hall = ''): array
 {
     $start = $month->modify('first day of this month')->format('Y-m-d');
     $end = $month->modify('first day of next month')->format('Y-m-d');
-    $query = $db->prepare("SELECT event_date, status, COUNT(*) count FROM bookings WHERE event_date >= ? AND event_date < ? GROUP BY event_date, status");
-    $query->execute([$start, $end]);
+    $sql = "SELECT event_date, status, COUNT(*) count FROM bookings WHERE event_date >= ? AND event_date < ?";
+    $params = [$start, $end];
+    if (in_array($hall, ADMIN_HALLS, true)) { $sql .= ' AND hall = ?'; $params[] = $hall; }
+    $query = $db->prepare($sql . ' GROUP BY event_date, status');
+    $query->execute($params);
     $days = [];
     foreach ($query->fetchAll() as $row) {
         $days[$row['event_date']][$row['status']] = (int) $row['count'];
@@ -185,9 +193,9 @@ function admin_excel_export(array $rows): never
 {
     header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
     header('Content-Disposition: attachment; filename="venue-enquiries-bookings-' . date('Y-m-d') . '.xls"');
-    echo "\xEF\xBB\xBF<table><thead><tr><th>Reference</th><th>Event Date</th><th>Guest</th><th>Phone</th><th>Email</th><th>Event</th><th>Guests</th><th>Source</th><th>Total</th><th>Received</th><th>Balance</th><th>Follow-up</th><th>Status</th></tr></thead><tbody>";
+    echo "\xEF\xBB\xBF<table><thead><tr><th>Reference</th><th>Event Date</th><th>Hall</th><th>Guest</th><th>Phone</th><th>Email</th><th>Event</th><th>Guests</th><th>Source</th><th>Total</th><th>Received</th><th>Balance</th><th>Follow-up</th><th>Status</th></tr></thead><tbody>";
     foreach ($rows as $row) {
-        $values = ['VCM-' . str_pad((string) $row['id'], 6, '0', STR_PAD_LEFT), $row['event_date'], $row['name'], $row['phone'], $row['email'], $row['event_type'], $row['guests'], $row['source'], $row['total_amount'], $row['paid_amount'], max(0, (float) $row['total_amount'] - (float) $row['paid_amount']), $row['follow_up_at'], $row['status']];
+        $values = ['VCM-' . str_pad((string) $row['id'], 6, '0', STR_PAD_LEFT), $row['event_date'], ucfirst((string) ($row['hall'] ?? 'big')) . ' Hall', $row['name'], $row['phone'], $row['email'], $row['event_type'], $row['guests'], $row['source'], $row['total_amount'], $row['paid_amount'], max(0, (float) $row['total_amount'] - (float) $row['paid_amount']), $row['follow_up_at'], $row['status']];
         echo '<tr>';
         foreach ($values as $value) {
             $cell = (string) $value;
@@ -217,7 +225,7 @@ function admin_pdf_export(array $rows): never
         $guest = admin_text_cut((string) $row['name'], 22);
         $event = admin_text_cut((string) $row['event_type'], 18);
         $payment = number_format((float) $row['paid_amount'], 2) . '/' . number_format((float) $row['total_amount'], 2);
-        $lines[] = sprintf('%-10s %-10s %-22s %-18s %-10s %-17s %-10s', $ref, $row['event_date'], $guest, $event, ucfirst((string) $row['source']), $payment, ucfirst((string) $row['status']));
+        $lines[] = sprintf('%-10s %-10s %-7s %-20s %-16s %-9s %-15s %-10s', $ref, $row['event_date'], ucfirst((string) ($row['hall'] ?? 'big')), $guest, $event, ucfirst((string) $row['source']), $payment, ucfirst((string) $row['status']));
     }
     if (count($lines) === 3) {
         $lines[] = 'No records matched the active filters.';

@@ -9,11 +9,11 @@ function enquiry_schema_ready(PDO $db): bool
     if ($db->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
         $columns = array_column($db->query('PRAGMA table_info(bookings)')->fetchAll(), 'name');
         $tables = $db->query("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('enquiry_notes','enquiry_followups')")->fetchColumn();
-        return in_array('record_type', $columns, true) && in_array('enquiry_id', $columns, true) && (int) $tables === 2;
+        return in_array('record_type', $columns, true) && in_array('enquiry_id', $columns, true) && in_array('hall', $columns, true) && (int) $tables === 2;
     }
-    $columns = $db->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='bookings' AND COLUMN_NAME IN ('record_type','enquiry_id')")->fetchColumn();
+    $columns = $db->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='bookings' AND COLUMN_NAME IN ('record_type','enquiry_id','hall')")->fetchColumn();
     $tables = $db->query("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('enquiry_notes','enquiry_followups')")->fetchColumn();
-    return (int) $columns === 2 && (int) $tables === 2;
+    return (int) $columns === 3 && (int) $tables === 2;
 }
 
 function enquiry_filters(array $input): array
@@ -21,6 +21,7 @@ function enquiry_filters(array $input): array
     $date = static fn(string $value): string => preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) ? $value : '';
     $status = strtolower(trim((string) ($input['status'] ?? '')));
     $source = strtolower(trim((string) ($input['source'] ?? '')));
+    $hall = strtolower(trim((string) ($input['hall'] ?? '')));
     return [
         'q' => admin_text_cut(trim((string) ($input['q'] ?? '')), 120),
         'from' => $date(trim((string) ($input['from'] ?? ''))),
@@ -28,6 +29,7 @@ function enquiry_filters(array $input): array
         'status' => in_array($status, ENQUIRY_STATUSES, true) ? $status : '',
         'event_type' => admin_text_cut(trim((string) ($input['event_type'] ?? '')), 40),
         'source' => in_array($source, ENQUIRY_SOURCES, true) ? $source : '',
+        'hall' => in_array($hall, ADMIN_HALLS, true) ? $hall : '',
     ];
 }
 
@@ -45,6 +47,7 @@ function enquiry_where(array $filters, array &$params): string
     if ($filters['status'] !== '') { $where[] = 'b.status = ?'; $params[] = $filters['status']; }
     if ($filters['event_type'] !== '') { $where[] = 'b.event_type = ?'; $params[] = $filters['event_type']; }
     if ($filters['source'] !== '') { $where[] = 'b.source = ?'; $params[] = $filters['source']; }
+    if ($filters['hall'] !== '') { $where[] = 'b.hall = ?'; $params[] = $filters['hall']; }
     return ' WHERE ' . implode(' AND ', $where);
 }
 
@@ -102,15 +105,15 @@ function enquiry_related(PDO $db, array $rows): array
 function enquiry_excel(array $rows): never
 {
     header('Content-Type: application/vnd.ms-excel; charset=UTF-8'); header('Content-Disposition: attachment; filename="venue-enquiries-' . date('Y-m-d') . '.xls"');
-    echo "\xEF\xBB\xBF<table><thead><tr><th>Reference</th><th>Enquiry Date</th><th>Event Date</th><th>Name</th><th>Phone</th><th>Email</th><th>Event Type</th><th>Guests</th><th>Source</th><th>Status</th><th>Follow-up</th></tr></thead><tbody>";
-    foreach ($rows as $row) { $values = ['ENQ-' . str_pad((string) $row['id'],6,'0',STR_PAD_LEFT),$row['created_at'],$row['event_date'],$row['name'],$row['phone'],$row['email'],$row['event_type'],$row['guests'],$row['source'],$row['status'],$row['latest_followup_at']]; echo '<tr>'; foreach ($values as $value) { $cell=(string)$value; if(preg_match('/^[=+\-@]/u',$cell))$cell="'".$cell; echo '<td>'.htmlspecialchars($cell,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8').'</td>'; } echo '</tr>'; }
+    echo "\xEF\xBB\xBF<table><thead><tr><th>Reference</th><th>Enquiry Date</th><th>Event Date</th><th>Hall</th><th>Name</th><th>Phone</th><th>Email</th><th>Event Type</th><th>Guests</th><th>Source</th><th>Status</th><th>Follow-up</th></tr></thead><tbody>";
+    foreach ($rows as $row) { $values = ['ENQ-' . str_pad((string) $row['id'],6,'0',STR_PAD_LEFT),$row['created_at'],$row['event_date'],ucfirst((string) ($row['hall'] ?? 'big')).' Hall',$row['name'],$row['phone'],$row['email'],$row['event_type'],$row['guests'],$row['source'],$row['status'],$row['latest_followup_at']]; echo '<tr>'; foreach ($values as $value) { $cell=(string)$value; if(preg_match('/^[=+\-@]/u',$cell))$cell="'".$cell; echo '<td>'.htmlspecialchars($cell,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8').'</td>'; } echo '</tr>'; }
     echo '</tbody></table>'; exit;
 }
 
 function enquiry_pdf(array $rows): never
 {
     $lines=['VENUE ENQUIRIES','Generated: '.date('d M Y H:i'),str_repeat('-',112)];
-    foreach($rows as $row){$ref='ENQ-'.str_pad((string)$row['id'],6,'0',STR_PAD_LEFT);$lines[]=sprintf('%-10s %-10s %-22s %-18s %-8s %-13s %-13s',$ref,$row['event_date'],admin_text_cut($row['name'],22),admin_text_cut($row['event_type'],18),(string)($row['guests']??'-'),ucfirst($row['source']),ucwords(str_replace('_',' ',$row['status'])));}
+    foreach($rows as $row){$ref='ENQ-'.str_pad((string)$row['id'],6,'0',STR_PAD_LEFT);$lines[]=sprintf('%-10s %-10s %-7s %-20s %-16s %-8s %-12s %-12s',$ref,$row['event_date'],ucfirst((string) ($row['hall'] ?? 'big')),admin_text_cut($row['name'],20),admin_text_cut($row['event_type'],16),(string)($row['guests']??'-'),ucfirst($row['source']),ucwords(str_replace('_',' ',$row['status'])));}
     if(count($lines)===3)$lines[]='No enquiries matched the active filters.';
     admin_pdf_download($lines,'venue-enquiries-'.date('Y-m-d').'.pdf');
 }
