@@ -4,5 +4,5 @@ deployment:
     - export DEPLOYPATH=$HOME/public_html/
     - /bin/mkdir -p $DEPLOYPATH/admin
     - /bin/cp -R assets $DEPLOYPATH
-    - /bin/cp *.html styles.css script.js gallery.js booking.php booking-store.php robots.txt sitemap.xml $DEPLOYPATH
-    - /bin/cp admin/index.php $DEPLOYPATH/admin/index.php
+    - /bin/cp *.html styles.css script.js gallery.js booking.php booking-store.php popup.php robots.txt sitemap.xml $DEPLOYPATH
+    - /bin/cp admin/index.php admin/dashboard-lib.php admin/admin.css admin/admin.js admin/enquiries.php admin/enquiries-lib.php admin/enquiries.css admin/enquiries.js admin/settings.php admin/settings-lib.php admin/settings.css admin/settings.js $DEPLOYPATH/admin/

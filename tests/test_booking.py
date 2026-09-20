@@ -53,8 +53,10 @@ def run_test(env):
         private = base / "private"
         (public / "admin").mkdir(parents=True)
         private.mkdir()
-        for name in ("booking.php", "booking-store.php", "admin/index.php"):
+        for name in ("booking.php", "booking-store.php"):
             shutil.copy2(ROOT / name, public / name)
+        for name in ("index.php", "dashboard-lib.php", "settings-lib.php", "admin.css", "admin.js"):
+            shutil.copy2(ROOT / "admin" / name, public / "admin" / name)
         password_hash = subprocess.check_output([PHP, "-r", 'echo password_hash("test-password", PASSWORD_DEFAULT);'], text=True)
         (public / "booking-config.php").write_text(
             "<?php return ['mysql' => ['host' => " + php_literal(env["VCM_TEST_MYSQL_HOST"])
@@ -105,20 +107,37 @@ def run_test(env):
                 def action(**fields):
                     return request(opener, url + "/admin/", {"csrf": token, **fields})
                 status, panel = action(password="test-password", action="login")
-                assert status == 200 and "Test Guest" in panel and "Second Guest" in panel
-                assert "Booking updated." in action(id=str(first_id), action="confirm")[1]
+                assert status == 200 and "Booking Management Dashboard" in panel
+                assert "Test Guest" in panel and "Second Guest" in panel
+                assert "Venue Calendar" in panel and 'id="detailDrawer"' in panel
+                followup = (date.today() + timedelta(days=1)).isoformat() + "T10:30"
+                assert "Follow-up scheduled." in action(id=str(first_id), action="schedule_followup", follow_up_at=followup)[1]
+                assert "Internal notes saved." in action(id=str(first_id), action="save_notes", internal_notes="Prefers a morning call")[1]
+                assert "Follow-up completed." in action(id=str(first_id), action="complete_followup")[1]
+                converted = action(id=str(first_id), action="confirm")[1]
+                first_booking_id = int(re.search(r"VCM-(\d+)", converted).group(1))
                 assert event_date in booked()
                 assert request(opener, url + "/booking.php", fields)[0] == 409
                 assert "This date is already booked or blocked." in action(id=str(second_id), action="confirm")[1]
-                assert "Booking updated." in action(id=str(first_id), action="cancel")[1]
+                assert "Booking details saved." in action(id=str(first_booking_id), action="save_details", source="whatsapp", total_amount="100000")[1]
+                assert "Payment recorded." in action(id=str(first_booking_id), action="add_payment", amount="25000", payment_method="upi", payment_reference="UPI-TEST", payment_notes="Advance")[1]
+                status, filtered = request(opener, url + "/admin/?tab=bookings&source=whatsapp&q=Test+Guest&date=" + event_date)
+                assert status == 200 and "Test Guest" in filtered and "Partial" in filtered
+                assert request(opener, url + "/admin/?tab=bookings&source=whatsapp&export=excel")[1].startswith("\ufeff<table>")
+                assert request(opener, url + "/admin/?tab=bookings&source=whatsapp&export=pdf")[1].startswith("%PDF-1.4")
+                assert "Record cancelled." in action(id=str(first_booking_id), action="cancel")[1]
                 assert event_date not in booked()
-                assert "Booking updated." in action(id=str(second_id), action="confirm")[1]
-                assert "Booking updated." in action(id=str(second_id), action="cancel")[1]
+                second_converted = action(id=str(second_id), action="confirm")[1]
+                second_booking_id = int(re.search(r"VCM-(\d+)", second_converted).group(1))
+                assert "Record cancelled." in action(id=str(second_booking_id), action="cancel")[1]
                 assert "Date blocked." in action(date=event_date, action="block")[1]
                 assert event_date in booked()
                 assert "That date is already booked or blocked." in action(date=event_date, action="block")[1]
+                direct_date = (date.today() + timedelta(days=21)).isoformat()
+                direct = action(action="add_booking", name="Walk In Guest", phone="9988776655", email="walkin@example.com", event_type="Reception", event_date=direct_date, guests="250", source="walk-in", total_amount="150000")[1]
+                assert "Booking added." in direct and direct_date in booked()
                 assert request(opener, url + "/booking.php", {**fields, "phone": "bad"})[0] == 422
-                print("PASS: MySQL enquiry, admin confirmation, unique date, cancellation and manual block")
+                print("PASS: dashboard filters, calendar, drawer data, conversion, notes, follow-up, payment, exports, direct booking and blocking")
             finally:
                 server.terminate()
                 server.wait(timeout=5)

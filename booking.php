@@ -57,6 +57,8 @@ try {
         $insert = $db->prepare('INSERT INTO bookings (name, phone, email, event_type, event_date, guests, message) VALUES (?, ?, ?, ?, ?, ?, ?)');
         $insert->execute([$row['name'], $row['phone'], $row['email'], $row['event_type'], $row['event_date'], $row['guests'], $row['message']]);
         $id = (int) $db->lastInsertId();
+        $activity = $db->prepare("INSERT INTO booking_activity (booking_id, action, details) VALUES (?, 'enquiry_created', 'Website enquiry received')");
+        $activity->execute([$id]);
         $db->commit();
     } catch (Throwable $error) {
         $db->rollBack();

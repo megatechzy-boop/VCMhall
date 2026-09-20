@@ -150,3 +150,30 @@ if (galleryDialog) {
   const bounds = dialog.getBoundingClientRect();
   if (event.target === dialog && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) dialog.close();
 }));
+
+const loadWebsitePopup = async () => {
+  const response = await fetch('popup.php', { cache: 'no-store' });
+  if (!response.ok) return;
+  const popup = await response.json();
+  const closedAt = Number(localStorage.getItem('vcm-popup-closed') || 0);
+  if (!popup.enabled || Date.now() - closedAt < popup.cooldownHours * 3600000) return;
+  const overlay = document.createElement('div'); overlay.className = 'website-popup-overlay';
+  const card = document.createElement('section'); card.className = `website-popup-card website-popup-${popup.type}`; card.setAttribute('role', 'dialog'); card.setAttribute('aria-modal', 'true'); card.setAttribute('aria-label', popup.headline || 'Venue announcement');
+  const close = document.createElement('button'); close.className = 'website-popup-close'; close.type = 'button'; close.textContent = '×'; close.setAttribute('aria-label', 'Close popup'); card.append(close);
+  if (popup.type === 'image' && (popup.desktopImage || popup.mobileImage)) {
+    const picture = document.createElement('picture');
+    if (popup.mobileImage) { const source = document.createElement('source'); source.media = '(max-width: 600px)'; source.srcset = popup.mobileImage; picture.append(source); }
+    const image = document.createElement('img'); image.src = popup.desktopImage || popup.mobileImage; image.alt = popup.headline || 'Venue offer'; picture.append(image);
+    if (popup.clickUrl) { const link = document.createElement('a'); link.href = popup.clickUrl; link.append(picture); card.append(link); } else card.append(picture);
+  } else {
+    const content = document.createElement('div'); content.className = 'website-popup-copy';
+    const title = document.createElement('h2'); title.textContent = popup.headline || ''; const text = document.createElement('p'); text.textContent = popup.text || ''; content.append(title, text);
+    const actions = document.createElement('div'); actions.className = 'website-popup-actions';
+    [[popup.primaryText, popup.primaryUrl, 'primary'], [popup.secondaryText, popup.secondaryUrl, 'secondary']].forEach(([label, url, style]) => { if (!label || !url) return; const link = document.createElement('a'); link.textContent = label; link.href = url; link.className = style; actions.append(link); });
+    content.append(actions); card.append(content);
+  }
+  const dismiss = () => { localStorage.setItem('vcm-popup-closed', String(Date.now())); overlay.remove(); };
+  close.addEventListener('click', dismiss); overlay.addEventListener('click', (event) => { if (event.target === overlay) dismiss(); }); document.addEventListener('keydown', function escape(event) { if (event.key === 'Escape') { dismiss(); document.removeEventListener('keydown', escape); } });
+  overlay.append(card); document.body.append(overlay); close.focus();
+};
+loadWebsitePopup().catch(() => {});

@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+date_default_timezone_set('Asia/Kolkata');
 
 function booking_config(): array
 {
@@ -16,7 +17,20 @@ function booking_config(): array
 
 function booking_db(): PDO
 {
-    $config = booking_config()['mysql'] ?? [];
+    $fullConfig = booking_config();
+    $sqlite = $fullConfig['sqlite'] ?? null;
+    if (is_array($sqlite) && is_string($sqlite['path'] ?? null) && $sqlite['path'] !== '') {
+        $newDatabase = !is_file($sqlite['path']);
+        $db = new PDO('sqlite:' . $sqlite['path'], null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
+        $db->exec('PRAGMA foreign_keys = ON');
+        if ($newDatabase) {
+            $schema = file_get_contents(__DIR__ . '/schema-sqlite.sql');
+            if ($schema === false) throw new RuntimeException('Local SQLite schema is missing.');
+            $db->exec($schema);
+        }
+        return $db;
+    }
+    $config = $fullConfig['mysql'] ?? [];
     $host = $config['host'] ?? '';
     $port = (int) ($config['port'] ?? 3306);
     $name = $config['name'] ?? '';
@@ -26,12 +40,14 @@ function booking_db(): PDO
         || !is_string($password) || $port < 1 || $port > 65535) {
         throw new RuntimeException('MySQL booking configuration is incomplete.');
     }
-    return new PDO(
+    $db = new PDO(
         "mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4",
         $user,
         $password,
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false]
     );
+    $db->exec("SET time_zone = '+05:30'");
+    return $db;
 }
 
 function booking_today(): string

@@ -62,6 +62,14 @@ Do not deploy the booking forms until this setup is complete: without `booking-c
 4. Open `/admin/` and sign in with the password used to generate the hash. Review pending requests, confirm or cancel them, and manually block dates already booked offline.
 5. Send a test request and check both the admin list and the mailbox. `accepted_by_mail_server` means PHP accepted the message; it does not prove inbox delivery.
 
+For an existing database created before the booking-management dashboard, import `migrations/20260919_admin_dashboard.sql` once before deploying the updated admin files. The migration preserves existing rows and adds internal notes, follow-ups, booking totals, payment entries, activity history and supporting indexes. New installations only need `schema.sql`.
+
+Then import `migrations/20260919_enquiries.sql` to enable the dedicated Enquiries page. It classifies existing rows without deleting them, adds linked enquiry-to-booking conversion, and creates multiple-note and follow-up-history tables.
+
+Finally import `migrations/20260920_settings.sql` to enable database-backed venue, event type, payment, notification, template, system and website-popup settings. Credentials remain in `booking-config.php`; the database never stores MySQL or admin-password secrets. Popup uploads are validated JPG/PNG/WebP files stored under `assets/popups/`.
+
+The dashboard calculates every summary from MySQL. It supports status/source/date/text filters, a monthly availability calendar, a non-navigating detail drawer, enquiry conversion, up to five payment entries, follow-up scheduling, internal notes, and filter-aware Excel/PDF exports. WhatsApp actions open `wa.me`; email follow-ups reuse `email_from` from `booking-config.php`.
+
 The Home and Contact forms submit to `booking.php`. A new request is **pending** and does not reserve a date. Confirming it, or manually blocking an offline booking, removes that entire date from the visitor date lists and rejects further requests for that date. Cancelling releases the date. The date lists cover the next 24 months. The public API returns dates only, never guest details. MySQL credentials belong only in the ignored server config; database access must be limited to the dedicated user.
 
 If an earlier SQLite version was used for real bookings, move those records to MySQL before switching the live site; importing the empty schema alone does not preserve them.
@@ -76,6 +84,10 @@ The confirmed document root for `venutaihall.com` is `public_html`. Clone the Gi
 node --check script.js
 node --check gallery.js
 python tests/check_site.py
+python tests/check_admin_dashboard.py
+python tests/check_enquiries.py
+python tests/check_settings.py
+python tests/test_admin_exports.py
 python tests/test_booking.py
 php -l booking.php
 php -l booking-store.php
