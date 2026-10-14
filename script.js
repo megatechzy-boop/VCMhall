@@ -3,6 +3,10 @@
   const qsa = (sel, root = document) => [...root.querySelectorAll(sel)];
   const todayStr = new Date().toISOString().slice(0, 10);
 
+  qsa('[data-current-year]').forEach((year) => {
+    year.textContent = new Date().getFullYear();
+  });
+
   const SPACE_INFO = {
     big: { name: 'Big Hall', cap: 'Up to 1200 guests', ideal: 'Weddings & large events', page: 'big-hall' },
     small: { name: 'Small Hall', cap: 'Up to 350 guests', ideal: 'Engagements & birthdays', page: 'small-hall' },

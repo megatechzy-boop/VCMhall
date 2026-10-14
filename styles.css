@@ -13,6 +13,88 @@
   table { border-collapse: collapse; width: 100%; }
 }
 
+@layer components {
+  .error-page {
+    min-height: 100vh;
+    min-height: 100svh;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    background: var(--ivory);
+    color: var(--ink-2);
+  }
+  .error-logo { display: block; width: min(210px, 52vw); margin: 22px auto 0; }
+  .error-logo img { width: 100%; height: auto; }
+  .error-content {
+    width: min(100% - 40px, 680px);
+    margin: auto;
+    padding: 24px 0 72px;
+    text-align: center;
+  }
+  .error-code {
+    color: var(--wine);
+    font-family: var(--font-display);
+    font-size: clamp(112px, 24vw, 210px);
+    font-weight: 400;
+    letter-spacing: -0.08em;
+    line-height: 0.82;
+    opacity: 0.14;
+    padding-right: 0.08em;
+  }
+  .error-eyebrow {
+    margin-top: 12px;
+    color: var(--brass-deep);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .error-content h1 { margin-top: 12px; font-size: clamp(30px, 5vw, 46px); }
+  .error-copy { max-width: 540px; margin: 16px auto 0; line-height: 1.7; }
+  .error-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 28px; }
+  .error-button {
+    display: inline-flex;
+    min-height: 50px;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 20px;
+    border: 1px solid var(--line-2);
+    border-radius: 3px;
+    color: var(--wine-ink);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+  .error-button:hover { background: var(--sand); border-color: var(--brass); }
+  .error-button-primary { background: var(--wine); border-color: var(--wine); color: var(--ivory); }
+  .error-button-primary:hover { background: var(--wine-deep); border-color: var(--wine-deep); }
+  .error-contact { margin-top: 24px; font-size: 14px; }
+  .error-contact-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 10px; }
+  .error-contact-actions a {
+    display: inline-flex;
+    min-height: 42px;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border: 1px solid var(--line-2);
+    border-radius: 3px;
+    color: var(--wine);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .error-contact-actions a:hover { background: var(--sand); border-color: var(--brass); }
+  @media (max-width: 480px) {
+    .error-content { padding-bottom: 48px; }
+    .error-actions { flex-direction: column; }
+    .error-button { width: 100%; }
+    .error-contact-actions { flex-direction: column; }
+    .error-contact-actions a { width: 100%; }
+  }
+}
+
 @layer base {
   :root {
     --ivory: #f6f1e8;
@@ -917,7 +999,8 @@
        cell width (minus the badge area) and wraps cleanly instead of
        overflowing into the badge on narrow viewports. */
     .hall-row-featured { position: relative; padding-inline: 11px; margin-inline: 0; align-items: stretch; }
-    .hall-row-featured .hall-row-label { flex: 1 0 100%; max-width: 100%; padding-right: 78px; }
+    .hall-row-featured .hall-row-label { flex: 0 0 auto; max-width: 100%; padding-right: 78px; }
+    .hall-row-num-featured { align-self: flex-start; align-items: flex-start; }
     .hall-row-label .hall-speciality {
       position: absolute;
       top: 8px;
@@ -1880,14 +1963,18 @@
   .site-footer {
     background: var(--wine-ink);
     color: rgba(246, 241, 232, 0.78);
-    padding-top: clamp(52px, 7vw, 84px);
+    padding-top: clamp(32px, 4vw, 52px);
   }
   .footer-grid {
     display: grid;
-    grid-template-columns: 0.8fr 1.3fr 1fr 1fr;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.9fr) minmax(0, 1fr);
+    align-items: start;
     gap: clamp(12px, 2vw, 24px);
-    padding-bottom: clamp(40px, 5vw, 64px);
+    padding-bottom: 10px;
   }
+  .footer-grid > .footer-col:nth-child(1) { order: 1; }
+  .footer-grid > .footer-col:nth-child(3) { order: 2; }
+  .footer-grid > .footer-col:nth-child(2) { order: 3; }
   .footer-brand {
     background: var(--ivory);
     border-radius: 10px;
@@ -1923,7 +2010,7 @@
      viewport. On mobile (<=960px) the layout collapses to 1 column and the
      logo is no longer the constraint, so we restore comfortable page-matching
      left/right margins. */
-  .site-footer .shell { width: min(100% - 16px, 1440px); }
+  .site-footer .shell { width: min(100% - 16px, 1800px); }
   @media (max-width: 960px) { .site-footer .shell { width: min(100% - 48px, 1440px); } }
   @media (max-width: 640px) { .site-footer .shell { width: min(100% - 40px, 1440px); } }
   @media (max-width: 400px) { .site-footer .shell { width: min(100% - 32px, 1440px); } }
@@ -1997,9 +2084,9 @@
     letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--brass);
-    margin-bottom: 20px;
+    margin-bottom: 12px;
   }
-  .footer-links { display: grid; gap: 11px; }
+  .footer-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20px; row-gap: 6px; }
   .footer-links a {
     font-size: 14.5px;
     color: rgba(246, 241, 232, 0.78);
@@ -2007,7 +2094,7 @@
     width: fit-content;
   }
   .footer-links a:hover { color: var(--ivory); padding-left: 5px; }
-  .footer-contact-rows { display: grid; gap: 15px; }
+  .footer-contact-rows { display: grid; gap: 10px; }
   .footer-contact-rows a { color: rgba(246, 241, 232, 0.85); font-weight: 650; }
   .footer-contact-rows a:hover { color: var(--sand); }
   .footer-contact-rows .row-label {
@@ -2026,7 +2113,7 @@
     justify-content: space-between;
     gap: 18px;
     flex-wrap: wrap;
-    padding-block: 22px;
+    padding-block: 12px;
     border-top: 1px solid rgba(246, 241, 232, 0.14);
     font-size: 13px;
     color: rgba(246, 241, 232, 0.55);
@@ -2396,6 +2483,7 @@
     border-radius: 50%;
   }
   .heading-mr { display: block; margin-top: 9px; margin-bottom: 6px; font-family: "Noto Sans Devanagari", var(--font-body); font-size: clamp(18px, 1.9vw, 23px); font-weight: 650; letter-spacing: 0.01em; color: var(--wine); }
+  .page-hero .heading-mr { color: var(--ivory); }
   .hero .heading-mr { color: var(--brass); }
   .band-wine .heading-mr, .visit-cta .heading-mr, .cta-band .heading-mr { color: var(--sand); }
   .hl.hl { color: var(--wine); font-family: var(--font-display); font-weight: 640; letter-spacing: -0.01em; }
@@ -2472,12 +2560,13 @@
     .space-aside { position: static; }
     .setups-grid { grid-template-columns: repeat(2, 1fr); }
     .setup-card, .setup-card:nth-child(1), .setup-card:nth-child(2) { grid-column: span 1; }
-    .footer-grid { grid-template-columns: repeat(2, 1fr); }
+    .footer-grid { grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.9fr) minmax(0, 1fr); }
     .header-call span { display: none; }
   }
 
   @media (max-width: 960px) {
     :root { --shell: min(100% - 40px, 1280px); --shell-narrow: min(100% - 40px, 920px); --header-h: 72px; }
+    .footer-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr) minmax(0, 0.9fr); }
     .brand-en { font-size: 9.5px; }
     .footer-brand .brand-en { font-size: 11px; }
     .main-nav, .header-call { display: none; }
@@ -2504,6 +2593,7 @@
 
   @media (max-width: 768px) {
     :root { --bottom-bar-h: 76px; }
+    .footer-grid { grid-template-columns: 1fr; }
     .bottom-bar { display: flex; }
     .float-actions { display: none; }
     .to-top { right: 16px; bottom: calc(var(--bottom-bar-h) + 14px); width: 44px; height: 44px; }
@@ -2552,6 +2642,9 @@
     .events-grid { grid-template-columns: 1fr; }
     .setups-grid { grid-template-columns: 1fr; }
     .footer-grid { grid-template-columns: 1fr; gap: 34px; }
+    .footer-grid > .footer-col:nth-child(3) { order: 1; }
+    .footer-grid > .footer-col:nth-child(2) { order: 2; }
+    .footer-links { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20px; }
     .footer-bottom { flex-direction: column; align-items: flex-start; }
     .space-gallery { grid-template-columns: 1fr 1fr; gap: 10px; }
     .compare-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }

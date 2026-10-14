@@ -1571,64 +1571,10 @@ our_spaces_redirect = """<!doctype html>
 """
 
 BOOKING_PHP = """<?php
-header('Content-Type: application/json; charset=utf-8');
-header('X-Content-Type-Options: nosniff');
+declare(strict_types=1);
 
-function out($code, $arr) {
-    http_response_code($code);
-    echo json_encode($arr, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    exit;
-}
-
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    out(405, ['error' => 'Method not allowed.']);
-}
-
-$field = function ($key, $max = 500) {
-    $v = isset($_POST[$key]) ? trim((string)$_POST[$key]) : '';
-    if (strlen($v) > $max) {
-        $v = substr($v, 0, $max);
-    }
-    return $v;
-};
-
-$honeypot = $field('website', 200);
-if ($honeypot !== '') {
-    out(200, ['success' => true, 'message' => 'Thank you — your enquiry has been received.']);
-}
-
-$name = $field('name', 120);
-$phone = $field('phone', 40);
-if ($name === '' || $phone === '' || !preg_match('/[0-9]{10}/', $phone)) {
-    out(422, ['error' => 'Please provide your name and a valid phone number.']);
-}
-
-$allowed = ['event', 'guests', 'date', 'hall', 'email', 'message', 'callback_time', 'event_time', 'website'];
-$data = ['name' => $name, 'phone' => $phone, 'received' => gmdate('c')];
-foreach ($allowed as $key) {
-    if ($key === 'website') continue;
-    $data[$key] = $field($key, $key === 'message' ? 4000 : 200);
-}
-
-$cb_ok = ['Morning', 'Afternoon', 'Evening'];
-$et_ok = ['Morning', 'Afternoon', 'Evening', 'Night'];
-if (isset($data['callback_time']) && $data['callback_time'] !== '' && !in_array($data['callback_time'], $cb_ok, true)) {
-    $data['callback_time'] = '';
-}
-if (isset($data['event_time']) && $data['event_time'] !== '' && !in_array($data['event_time'], $et_ok, true)) {
-    $data['event_time'] = '';
-}
-$line = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . PHP_EOL;
-$ok = @file_put_contents(__DIR__ . '/enquiries.log', $line, FILE_APPEND | LOCK_EX);
-
-if ($ok === false) {
-    out(500, ['error' => 'Could not save your enquiry. Please call the venue on 9359567494.']);
-}
-
-out(200, [
-    'success' => true,
-    'message' => 'Thank you — your enquiry has been received. Our team will contact you shortly.',
-]);
+// Keep the public endpoint aligned with the database-backed booking handler.
+require __DIR__ . '/server-patch/booking.php';
 """
 
 POPUP_PHP = """<?php
@@ -1655,6 +1601,21 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
 
 RewriteCond %{HTTP_HOST} ^www\\.(.+)$ [NC]
 RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
+
+# Serve extensionless page URLs from their matching HTML files.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.html -f
+RewriteRule ^(.+?)/?$ $1.html [L]
+
+ErrorDocument 403 /403.html
+ErrorDocument 404 /404.html
+ErrorDocument 500 /500.html
+
+# Protect enquiry logs and private backend configuration/schema files.
+<FilesMatch "^(enquiries\\.log|booking-config\\.php|schema[^/]*\\.sql|.*\\.log)$">
+  Require all denied
+</FilesMatch>
 
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"
