@@ -79,12 +79,20 @@ function booking_encrypt_resend_key(string $apiKey,array $config): string
     if($cipher===false)throw new RuntimeException('The Resend key could not be secured.');
     return 'enc:v1:'.base64_encode($nonce.$tag.$cipher);
 }
+function booking_decrypt_secret(string $stored,array $config): string
+{
+    if(!str_starts_with($stored,'enc:v1:'))return '';
+    $raw=base64_decode(substr($stored,7),true);if($raw===false||strlen($raw)<29)return '';
+    $plain=openssl_decrypt(substr($raw,28),'aes-256-gcm',booking_email_crypto_key($config),OPENSSL_RAW_DATA,substr($raw,0,12),substr($raw,12,16));
+    return is_string($plain)?$plain:'';
+}
+function booking_whatsapp_token(PDO $db,array $config): string
+{
+    return booking_decrypt_secret(booking_setting($db,'whatsapp_access_token_enc'),$config);
+}
 function booking_resend_key(PDO $db,array $config): string
 {
-    $stored=booking_setting($db,'resend_api_key_enc');if(!str_starts_with($stored,'enc:v1:'))return '';
-    $raw=base64_decode(substr($stored,7),true);if($raw===false||strlen($raw)<29)return '';
-    $key=booking_email_crypto_key($config);$plain=openssl_decrypt(substr($raw,28),'aes-256-gcm',$key,OPENSSL_RAW_DATA,substr($raw,0,12),substr($raw,12,16));
-    return is_string($plain)?$plain:'';
+    return booking_decrypt_secret(booking_setting($db,'resend_api_key_enc'),$config);
 }
 function booking_send_email_message(PDO $db,array $config,string $to,string $subject,string $body,string $replyOverride = ''): array
 {
