@@ -86,8 +86,9 @@ function booking_decrypt_secret(string $stored,array $config): string
     $plain=openssl_decrypt(substr($raw,28),'aes-256-gcm',booking_email_crypto_key($config),OPENSSL_RAW_DATA,substr($raw,0,12),substr($raw,12,16));
     return is_string($plain)?$plain:'';
 }
-function booking_whatsapp_token(PDO $db,array $config): string
+function booking_whatsapp_token(?PDO $db,array $config): string
 {
+    if(!$db)return '';
     return booking_decrypt_secret(booking_setting($db,'whatsapp_access_token_enc'),$config);
 }
 function booking_resend_key(PDO $db,array $config): string
