@@ -362,3 +362,23 @@ DONE:
 Verification: build 29 pages, _check.py all refs resolve, braces 0, JS OK. big-hall: 4 number rows, featured, 9 specialities, #bh-form (action=/booking.php), 7 chips, CTA, address, overflow 0. small-hall: 2 rows, CONFIRM marker, 8 specialities, #sh-form, overflow 0. Events reveal: Big Hall event -> 4 highlight rows (gold #f2dcae on dark); Small Hall event -> 2 rows. .hl-num in Specialities verified (1,200/8/350). Sweep 320/390/768/1280/1366x768/1920x1080 = 0 overflow.
 
 Push: main -> both repos, plain.
+
+---
+Date: 2026-10-15
+Group: Resend email setup in admin
+Branch: main
+Status: verified, ready to publish
+
+What changed:
+- Added an Email setup section in the Settings sidebar with Resend API-key entry, sender name/address, reply-to, setup guidance, and a guarded test-email action.
+- The Resend API key is encrypted before it is stored in the settings database; the panel never fills it back into the page. Pasting a replacement rotates the stored key.
+- Added a shared Resend API sender for new-enquiry alerts and manual email actions. When no key is saved, existing server mail remains active. The test action requires a saved key and sends only after an admin clicks it.
+- Updated the tracked server patch copy at server-patch/booking-store.php; backend files are not copied by .cpanel.yml. A Git push alone does not install this PHP patch on the live server.
+- No API key was entered and no test email was sent.
+
+Verification:
+- python _build.py completed; generated no unrelated working-tree changes.
+- python _check.py passed: all 955 local references resolved across 32 HTML pages.
+- PHP syntax checks passed for admin/settings.php, admin/index.php, admin/enquiries.php, and server-patch/booking-store.php.
+- Dummy-key encryption round-trip passed; no real key or provider request used.
+- Token-pattern scan on staged changes found 0 matches.
