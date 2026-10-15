@@ -2,9 +2,14 @@
 declare(strict_types=1);
 date_default_timezone_set('Asia/Kolkata');
 
+function booking_root_dir(): string
+{
+    return is_file(__DIR__ . '/booking-config.php') ? __DIR__ : dirname(__DIR__);
+}
+
 function booking_config(): array
 {
-    $file = __DIR__ . '/booking-config.php';
+    $file = booking_root_dir() . '/booking-config.php';
     if (!is_file($file)) {
         throw new RuntimeException('Booking configuration is missing.');
     }
@@ -24,7 +29,7 @@ function booking_db(): PDO
         $db = new PDO('sqlite:' . $sqlite['path'], null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
         $db->exec('PRAGMA foreign_keys = ON');
         if ($newDatabase) {
-            $schema = file_get_contents(__DIR__ . '/schema-sqlite.sql');
+            $schema = file_get_contents(booking_root_dir() . '/schema-sqlite.sql');
             if ($schema === false) throw new RuntimeException('Local SQLite schema is missing.');
             $db->exec($schema);
         }

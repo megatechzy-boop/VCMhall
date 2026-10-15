@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
-require dirname(__DIR__) . '/booking-store.php';
+$bookingStore = dirname(__DIR__) . '/booking-store.php';
+if (!is_file($bookingStore)) $bookingStore = dirname(__DIR__) . '/server-patch/booking-store.php';
+require $bookingStore;
 require __DIR__ . '/dashboard-lib.php';
 require __DIR__ . '/settings-lib.php';
 
