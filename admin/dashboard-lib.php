@@ -213,7 +213,7 @@ function admin_calendar(PDO $db, DateTimeImmutable $month, string $hall = ''): a
 {
     $start = $month->modify('first day of this month')->format('Y-m-d');
     $end = $month->modify('first day of next month')->format('Y-m-d');
-    $sql = "SELECT event_date, status, COUNT(*) count FROM bookings WHERE event_date >= ? AND event_date < ?";
+    $sql = "SELECT event_date, status, COUNT(*) count FROM bookings WHERE event_date >= ? AND event_date < ? AND ((record_type = 'booking' AND status = 'confirmed') OR (record_type = 'enquiry' AND status IN ('pending','in_discussion','quote_sent','follow_up')) OR (record_type = 'block' AND status = 'blocked'))";
     $params = [$start, $end];
     if (in_array($hall, ADMIN_HALLS, true)) { $sql .= ' AND hall = ?'; $params[] = $hall; }
     $query = $db->prepare($sql . ' GROUP BY event_date, status');
@@ -246,7 +246,7 @@ function admin_related(PDO $db, array $rows): array
 function admin_excel_export(array $rows): never
 {
     header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
-    header('Content-Disposition: attachment; filename="venue-enquiries-bookings-' . date('Y-m-d') . '.xls"');
+    header('Content-Disposition: attachment; filename="venue-bookings-' . date('Y-m-d') . '.xls"');
     echo "\xEF\xBB\xBF<table><thead><tr><th>Reference</th><th>Event Date</th><th>Hall</th><th>Guest</th><th>Phone</th><th>Email</th><th>Event</th><th>Guests</th><th>Source</th><th>Total</th><th>Received</th><th>Balance</th><th>Follow-up</th><th>Status</th></tr></thead><tbody>";
     foreach ($rows as $row) {
         $values = ['VCM-' . str_pad((string) $row['id'], 6, '0', STR_PAD_LEFT), $row['event_date'], ucfirst((string) ($row['hall'] ?? 'big')) . ' Hall', $row['name'], $row['phone'], $row['email'], $row['event_type'], $row['guests'], $row['source'], $row['total_amount'], $row['paid_amount'], max(0, (float) $row['total_amount'] - (float) $row['paid_amount']), $row['follow_up_at'], $row['status']];
@@ -273,7 +273,7 @@ function admin_pdf_escape(string $text): string
 
 function admin_pdf_export(array $rows): never
 {
-    $lines = ['VENUE ENQUIRIES & BOOKINGS', 'Generated: ' . date('d M Y H:i'), str_repeat('-', 112)];
+    $lines = ['VENUE BOOKINGS', 'Generated: ' . date('d M Y H:i'), str_repeat('-', 112)];
     foreach ($rows as $row) {
         $ref = 'VCM-' . str_pad((string) $row['id'], 6, '0', STR_PAD_LEFT);
         $guest = admin_text_cut((string) $row['name'], 22);
@@ -284,7 +284,7 @@ function admin_pdf_export(array $rows): never
     if (count($lines) === 3) {
         $lines[] = 'No records matched the active filters.';
     }
-    admin_pdf_download($lines, 'venue-enquiries-bookings-' . date('Y-m-d') . '.pdf');
+    admin_pdf_download($lines, 'venue-bookings-' . date('Y-m-d') . '.pdf');
 }
 
 function admin_pdf_download(array $lines, string $filename): never

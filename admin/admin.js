@@ -11,6 +11,9 @@
     };
     if (prompts[action] && !window.confirm(prompts[action])) event.preventDefault();
   });
+  const menu = document.getElementById('sidebar'); const menuToggle = document.getElementById('menuToggle');
+  menuToggle?.addEventListener('click', () => { const open = menu.classList.toggle('open'); menuToggle.setAttribute('aria-expanded', String(open)); });
+  menu?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => { menu.classList.remove('open'); menuToggle?.setAttribute('aria-expanded', 'false'); }));
   const dataNode = document.getElementById('dashboardData');
   if (!dataNode) return;
   const data = JSON.parse(dataNode.textContent);
@@ -71,17 +74,14 @@
     switchDrawerTab('details'); drawer.classList.add('open'); drawer.setAttribute('aria-hidden', 'false'); backdrop.hidden = false; document.body.style.overflow = 'hidden'; document.getElementById('closeDrawer').focus();
   }
   function closeDrawer() { drawer.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); backdrop.hidden = true; document.body.style.overflow = ''; }
+  document.querySelectorAll('[data-calendar-date]').forEach((button) => button.addEventListener('click', () => { const date = encodeURIComponent(button.dataset.calendarDate); const target = button.classList.contains('booked') ? `bookings.php?date=${date}` : button.classList.contains('blocked') ? `bookings.php?tab=blocked&date=${date}` : button.classList.contains('enquiry') ? `enquiries.php?from=${date}&to=${date}` : `bookings.php?date=${date}`; window.location.href = target; }));
   document.querySelectorAll('[data-view-id]').forEach((button) => button.addEventListener('click', (event) => { event.stopPropagation(); openDrawer(button.dataset.viewId); }));
   document.querySelectorAll('tr[data-record-id]').forEach((row) => { row.addEventListener('click', (event) => { if (!event.target.closest('a,button,details,form')) openDrawer(row.dataset.recordId); }); row.addEventListener('keydown', (event) => { if (event.key === 'Enter') openDrawer(row.dataset.recordId); }); });
   document.getElementById('closeDrawer')?.addEventListener('click', closeDrawer); backdrop?.addEventListener('click', closeDrawer);
   document.querySelectorAll('[data-drawer-tab]').forEach((button) => button.addEventListener('click', () => switchDrawerTab(button.dataset.drawerTab)));
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && drawer.classList.contains('open')) closeDrawer(); });
-  document.querySelectorAll('[data-calendar-date]').forEach((button) => button.addEventListener('click', () => { document.getElementById('dateFilter').value = button.dataset.calendarDate; document.getElementById('filterForm').submit(); }));
   const bookingDialog = document.getElementById('bookingDialog'); const blockDialog = document.getElementById('blockDialog');
   document.querySelector('[data-open-booking]')?.addEventListener('click', () => bookingDialog.showModal()); document.querySelector('[data-open-block]')?.addEventListener('click', () => blockDialog.showModal());
   document.querySelectorAll('[data-close-dialog]').forEach((button) => button.addEventListener('click', () => button.closest('dialog').close()));
   [bookingDialog, blockDialog].forEach((dialog) => dialog?.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); }));
-  const menu = document.getElementById('sidebar'); const menuToggle = document.getElementById('menuToggle');
-  menuToggle?.addEventListener('click', () => { const open = menu.classList.toggle('open'); menuToggle.setAttribute('aria-expanded', String(open)); });
-  menu?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => { menu.classList.remove('open'); menuToggle?.setAttribute('aria-expanded', 'false'); }));
 })();

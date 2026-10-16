@@ -1,0 +1,1 @@
+<section class="settings-card-form narrow"><h2>Login access</h2><div class="single-admin"><strong>Need to add or remove a login?</strong><p>Login accounts are managed separately from venue settings. Contact the person who set up your admin access to change who can sign in.</p></div></section>

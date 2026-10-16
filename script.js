@@ -602,12 +602,18 @@
       const response = await fetch('popup.php', { cache: 'no-store' });
       if (!response.ok) return;
       const popup = await response.json();
-      const closedAt = Number(localStorage.getItem('vcm-popup-closed') || 0);
-      if (!popup.enabled || Date.now() - closedAt < (popup.cooldownHours || 24) * 3600000) return;
+      if (!popup.enabled) return;
+      const delaySeconds = [30, 60].includes(Number(popup.delaySeconds)) ? Number(popup.delaySeconds) : 30;
+      await new Promise((resolve) => window.setTimeout(resolve, delaySeconds * 1000));
+      let closedAt = 0;
+      try { closedAt = Number(localStorage.getItem('vcm-popup-closed') || 0); } catch {}
+      const cooldown = Math.max(1, Math.min(720, Number(popup.cooldownHours) || 24)) * 3600000;
+      if (Date.now() - closedAt < cooldown) return;
+
       const overlay = document.createElement('div');
       overlay.className = 'website-popup-overlay';
       const card = document.createElement('section');
-      card.className = `website-popup-card website-popup-${popup.type || 'text'}`;
+      card.className = `website-popup-card website-popup-${popup.type === 'image' ? 'image' : 'text'}`;
       card.setAttribute('role', 'dialog');
       card.setAttribute('aria-modal', 'true');
       card.setAttribute('aria-label', popup.headline || 'Venue announcement');
@@ -617,6 +623,35 @@
       close.textContent = '×';
       close.setAttribute('aria-label', 'Close popup');
       card.append(close);
+
+      const makeLink = (label, url, style) => {
+        if (!label || !url) return null;
+        const link = document.createElement('a');
+        link.textContent = label;
+        link.href = url;
+        link.className = style;
+        if (/^(?:https?:)?\/\/(?:wa\.me|api\.whatsapp\.com|web\.whatsapp\.com)\//i.test(url)) {
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+        }
+        return link;
+      };
+      const copy = () => {
+        const content = document.createElement('div');
+        content.className = 'website-popup-copy';
+        if (popup.headline) { const title = document.createElement('h2'); title.textContent = popup.headline; content.append(title); }
+        if (popup.text) { const text = document.createElement('p'); text.textContent = popup.text; content.append(text); }
+        const actions = document.createElement('div');
+        actions.className = 'website-popup-actions';
+        const primary = makeLink(popup.primaryText, popup.primaryUrl, 'primary');
+        const secondary = makeLink(popup.secondaryText, popup.secondaryUrl, 'secondary');
+        if (primary) actions.append(primary);
+        if (secondary) actions.append(secondary);
+        if (actions.childElementCount) content.append(actions);
+        return content;
+      };
+
+      let imageFailed = false;
       if (popup.type === 'image' && (popup.desktopImage || popup.mobileImage)) {
         const picture = document.createElement('picture');
         if (popup.mobileImage) {
@@ -628,51 +663,44 @@
         const image = document.createElement('img');
         image.src = popup.desktopImage || popup.mobileImage;
         image.alt = popup.headline || 'Venue offer';
+        image.onerror = () => {
+          if (imageFailed) return;
+          imageFailed = true;
+          card.classList.remove('website-popup-image');
+          card.classList.add('website-popup-text');
+          picture.closest('a')?.remove();
+          picture.remove();
+          card.append(copy());
+        };
         picture.append(image);
         if (popup.clickUrl) {
-          const link = document.createElement('a');
-          link.href = popup.clickUrl;
-          link.append(picture);
-          card.append(link);
+          const imageLink = document.createElement('a');
+          imageLink.href = popup.clickUrl;
+          if (/^(?:https?:)?\/\/(?:wa\.me|api\.whatsapp\.com|web\.whatsapp\.com)\//i.test(popup.clickUrl)) {
+            imageLink.target = '_blank';
+            imageLink.rel = 'noopener noreferrer';
+          }
+          imageLink.append(picture);
+          card.append(imageLink);
         } else card.append(picture);
-      } else {
-        const content = document.createElement('div');
-        content.className = 'website-popup-copy';
-        const title = document.createElement('h2');
-        title.textContent = popup.headline || '';
-        const text = document.createElement('p');
-        text.textContent = popup.text || '';
-        content.append(title, text);
-        const actions = document.createElement('div');
-        actions.className = 'website-popup-actions';
-        [[popup.primaryText, popup.primaryUrl, 'primary'], [popup.secondaryText, popup.secondaryUrl, 'secondary']].forEach(([label, url, style]) => {
-          if (!label || !url) return;
-          const link = document.createElement('a');
-          link.textContent = label;
-          link.href = url;
-          link.className = style;
-          actions.append(link);
-        });
-        content.append(actions);
-        card.append(content);
-      }
+        const actions = copy().querySelector('.website-popup-actions');
+        if (actions) card.append(actions);
+      } else card.append(copy());
+
+      let escapeHandler;
       const dismiss = () => {
-        localStorage.setItem('vcm-popup-closed', String(Date.now()));
+        try { localStorage.setItem('vcm-popup-closed', String(Date.now())); } catch {}
         overlay.remove();
+        if (escapeHandler) document.removeEventListener('keydown', escapeHandler);
       };
       close.addEventListener('click', dismiss);
       overlay.addEventListener('click', (event) => { if (event.target === overlay) dismiss(); });
-      document.addEventListener('keydown', function escape(event) {
-        if (event.key === 'Escape') {
-          dismiss();
-          document.removeEventListener('keydown', escape);
-        }
-      });
+      escapeHandler = (event) => { if (event.key === 'Escape') dismiss(); };
+      document.addEventListener('keydown', escapeHandler);
       overlay.append(card);
       document.body.append(overlay);
       close.focus();
-    } catch {
-    }
+    } catch {}
   };
   loadWebsitePopup();
 
