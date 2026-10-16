@@ -23,6 +23,9 @@ for f in pages:
             continue
         if os.path.exists(path + ".html"):
             continue
+        if path.startswith("assets/") and path.lower().endswith((".jpg", ".jpeg", ".png")):
+            if os.path.exists(os.path.splitext(path)[0] + ".webp"):
+                continue
         missing.append(f"{f} -> {r}")
 
 print(f"checked {checked} local refs across {len(pages)} pages")

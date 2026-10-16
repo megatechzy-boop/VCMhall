@@ -26,7 +26,7 @@ FONT_LINK = (
     '  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500&family=Noto+Serif+Devanagari:wght@500;600&display=swap" rel="stylesheet" />'
 )
 
-OG_IMAGE = "https://venutaihall.com/assets/hero-hall.jpg"
+OG_IMAGE = "https://venutaihall.com/assets/hero-hall.webp"
 SITE_NAME = "Late Venutai Chavan Multipurpose Hall"
 
 SEO = {
@@ -204,21 +204,21 @@ def pic(img, alt, *, lazy=True, priority=False):
     load = ' fetchpriority="high"' if priority else (' loading="lazy"' if lazy else "")
     return (
         f'<picture><source srcset="/assets/{base}.webp" type="image/webp" />'
-        f'<img src="/assets/{img}" alt="{alt}" width="{w}" height="{h}"{load} /></picture>'
+        f'<img src="/assets/{base}.webp" alt="{alt}" width="{w}" height="{h}"{load} /></picture>'
     )
 
 
 def plain_tile(cat, img, caption, label, sub, alt):
     return (
         f'<button type="button" class="gallery-tile" data-gallery-item data-category="{cat}" '
-        f'data-image="assets/{img}" data-caption="{caption}" data-label="{label}">'
+        f'data-image="assets/{img.rsplit(".", 1)[0]}.webp" data-caption="{caption}" data-label="{label}">'
         f'{pic(img, alt)}'
         f'<span class="gallery-tile-overlay"><strong>{label}<small>{sub}</small></strong>{icon("i-search")}</span></button>'
     )
 
 
 def crop_tile(cat, caption, x, y, w, h, label=None):
-    src = "assets/gallery-reference.jpg"
+    src = "assets/gallery-reference.webp"
     style = f"--ref-src:url('{src}');--crop-x:{x};--crop-y:{y};--crop-w:{w};--crop-h:{h};"
     data_crop = f"--crop-x:{x};--crop-y:{y};--crop-w:{w};--crop-h:{h};"
     lab = label or caption
@@ -787,7 +787,7 @@ EXPLORERS = [
     explorer_card("01", "Main Hall", "Big Hall",
                   "The largest space in the venue: a full-size banquet hall for weddings, receptions and large community events, with room for a stage, seating and procession flow.",
                   [("Capacity", "Up to 1200 guests"), ("Air-conditioning", "Fully air-conditioned"), ("Ideal for", "Weddings · Large events"), ("Pricing", "Enquire for pricing")],
-                  "big-hall.html", "hero-hall.jpg", "Big Hall with chandeliers and rows of seats",
+                  "big-hall.html", "big-hall-primary.jpg", "Big Hall wedding setup in Nigdi, Pune",
                   '<span class="chip chip-wine">Up to 1200</span>'),
     explorer_card("02", "Celebration Hall", "Small Hall",
                   "A mid-sized hall that suits engagements, birthdays, naming ceremonies and family functions — big enough for a stage, close enough to feel personal.",
@@ -972,19 +972,18 @@ FACILITY_GROUPS = [
     ("i-ac", "Comfort", ["Fully air-conditioned halls", "A/C guest rooms", "Clean washrooms", "Lobby &amp; waiting area", "Lift access"]),
     ("i-dining", "Dining", ["Dining Hall — 400 at a time", "VIP A/C Dining — 50 at a time", "Catering support for your caterer"]),
     ("i-projector", "Event Technology", ["Acoustic system", "LED screen", "Projector", "Wi-Fi connectivity"]),
-    ("i-shield", "Safety &amp; Access", ["CCTV surveillance", "Fire alarm system", "Easy access in Nigdi Pradhikaran"], "CONFIRM parking"),
+    ("i-shield", "Safety &amp; Access", ["CCTV surveillance", "Fire alarm system", "Easy access in Nigdi Pradhikaran"]),
 ]
 
 
-def facility_group(icon_id, title, items, placeholder=None):
-    ph = f' data-placeholder="{placeholder}"' if placeholder else ""
+def facility_group(icon_id, title, items):
     lis = "\n                ".join(f'<li>{icon("i-check")}{item}</li>' for item in items)
     delay = {"Comfort": "", "Dining": " reveal-delay-1", "Event Technology": " reveal-delay-2", "Safety &amp; Access": " reveal-delay-3"}.get(title, "")
     return f"""
           <div class="facility-group reveal{delay}">
             <span class="group-icon">{icon(icon_id)}</span>
             <h3>{title}</h3>
-            <ul{ph}>
+            <ul>
                 {lis}
             </ul>
           </div>"""
@@ -1560,7 +1559,6 @@ our_spaces_redirect = """<!doctype html>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="refresh" content="0; url=spaces.html" />
-  <link rel="canonical" href="https://venutaihall.com/spaces" />
   <meta name="robots" content="noindex" />
   <title>Spaces | Late Venutai Chavan Multipurpose Hall</title>
 </head>
@@ -1733,7 +1731,6 @@ everything_included_main = f"""
           <div class="section-head reveal"><div><p class="eyebrow">Package</p><h2 id="ei-small">Small <em>Hall</em></h2></div><a class="text-link" href="small-hall">Small Hall page {icon("i-arrow")}</a></div>
           <div class="facility-bullets">
             <div class="facility-bullet-group reveal"><h3>Specialities</h3><ul><li>Fully Air-Conditioned Hall</li><li>Seating Capacity: Up to 350 People</li><li>Catering Facility Available</li><li>Fully Equipped with an Acoustic System</li><li>The Entire Building is Equipped with a Fire-Fighting System</li><li>4-Wheeler &amp; 2-Wheeler Parking Available</li><li>LED Screen &amp; Projector Available</li><li>CCTV Surveillance — The Entire Building is Under CCTV Surveillance</li></ul></div>
-            <div class="facility-bullet-group reveal reveal-delay-1" data-placeholder="CONFIRM with client: small hall dining details"><h3>Dining</h3><ul><li>Dining — Seating Capacity: Up to 50 People at a Time</li></ul></div>
           </div>
         </div>
       </section>
@@ -1809,7 +1806,6 @@ small_hall_main = f"""
             <h3 class="hall-name" id="nums-title">Small Hall numbers</h3>
             <dl class="hall-numbers">
               <div class="hall-row"><dt class="hall-row-label">Full A/C Hall</dt><dd class="hall-row-num"><span class="hall-num-val">350</span><span class="hall-num-cap">up to · guests</span></dd></div>
-              <div class="hall-row" data-placeholder="CONFIRM with client: small hall dining details"><dt class="hall-row-label">A/C Dining</dt><dd class="hall-row-num"><span class="hall-num-val">50</span><span class="hall-num-cap">at a time</span></dd></div>
             </dl>
           </div>
         </div>
@@ -1932,14 +1928,13 @@ def build():
     print("wrote our-spaces.html (redirect)")
     (ROOT / "booking.php").write_text(BOOKING_PHP, encoding="utf-8")
     print("wrote booking.php")
-    (ROOT / "popup.php").write_text(POPUP_PHP, encoding="utf-8")
-    print("wrote popup.php")
     (ROOT / ".htaccess").write_text(HTACCESS, encoding="utf-8")
     print("wrote .htaccess")
     (ROOT / "robots.txt").write_text(ROBOTS, encoding="utf-8")
     print("wrote robots.txt")
     build_sitemap()
-    build_webp()
+    from seo_build import run as build_seo_assets
+    build_seo_assets(ROOT)
     print("done")
 
 

@@ -3,5 +3,5 @@ deployment:
   tasks:
     - export DEPLOYPATH=/home/venutaihall/public_html/
     - /bin/cp *.html $DEPLOYPATH
-    - /bin/cp styles.css script.js $DEPLOYPATH
+    - /bin/cp styles.css script.js styles.min.css script.min.js $DEPLOYPATH
     - /bin/cp -R assets $DEPLOYPATH

@@ -1,0 +1,11 @@
+{
+  "name": "vcmhall-static-site-build",
+  "private": true,
+  "scripts": {
+    "build:assets": "node build-assets.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "sharp": "^0.34.0"
+  }
+}

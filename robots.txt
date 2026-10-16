@@ -1,4 +1,33 @@
 User-agent: *
 Allow: /
+Disallow: /.original-assets/
+Disallow: /.build/
+Disallow: /admin/
+Disallow: /booking.php
+Disallow: /popup.php
+Disallow: /deploy-test
+Disallow: /thank-you
+Disallow: /server-patch/
+Disallow: /_removed/
+
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: PerplexityBot
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: CCBot
+Allow: /
+Disallow: /.original-assets/
+Disallow: /.build/
+Disallow: /admin/
+Disallow: /booking.php
+Disallow: /popup.php
+Disallow: /deploy-test
+Disallow: /thank-you
+Disallow: /server-patch/
+Disallow: /_removed/
 
 Sitemap: https://venutaihall.com/sitemap.xml

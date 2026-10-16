@@ -1,5 +1,7 @@
 __pycache__/
 *.pyc
+node_modules/
+.build/
 enquiries.log
 Thumbs.db
 desktop.ini
