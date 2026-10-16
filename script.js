@@ -730,12 +730,14 @@
 
   const callPicker = qs('#call-picker');
   if (callPicker) {
-    const triggers = qsa('[data-call-picker]');
+    const triggers = qsa('[data-call-picker], [data-whatsapp-picker]');
+    const callPickerTitle = qs('#call-picker-title', callPicker);
     let lastFocused = null;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const focusable = () => qsa('a[href], button:not([disabled])', callPicker).filter((el) => el.offsetParent !== null);
     const open = (trigger) => {
       lastFocused = trigger;
+      if (callPickerTitle) callPickerTitle.textContent = trigger.hasAttribute('data-whatsapp-picker') ? 'WhatsApp the venue' : 'Call the venue';
       callPicker.hidden = false;
       requestAnimationFrame(() => callPicker.classList.add('is-open'));
       document.body.style.overflow = 'hidden';

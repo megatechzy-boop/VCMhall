@@ -1383,11 +1383,14 @@
   .call-picker-close .icon { width: 18px; height: 18px; }
   .call-picker-close:hover { background: var(--sand-2); }
   .call-picker-list { list-style: none; margin: 0; padding: 8px; }
-  .call-picker-item { display: flex; align-items: center; gap: 14px; padding: 14px 12px; border-radius: 8px; text-decoration: none; color: var(--ink); transition: background 0.18s ease; }
-  .call-picker-item:hover { background: var(--sand-2); }
-  .call-picker-icon { width: 44px; height: 44px; display: grid; place-items: center; background: var(--wine); border-radius: 50%; flex: none; }
-  .call-picker-icon .icon { width: 20px; height: 20px; color: var(--ivory); }
-  .call-picker-text { display: flex; flex-direction: column; }
+  .contact-row { display: flex; flex-direction: row; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 8px; transition: background 0.18s ease; }
+  .contact-row:hover { background: var(--sand-2); }
+  .contact-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .call-icon { width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; background: var(--wine); display: flex; align-items: center; justify-content: center; text-decoration: none; }
+  .call-icon .icon { width: 20px; height: 20px; color: var(--ivory); }
+  .wa-btn { width: 44px; height: 44px; flex-shrink: 0; margin-left: auto; border-radius: 50%; background: #25d366; color: #fff; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: background 0.18s ease, transform 0.18s ease; }
+  .wa-btn .icon { width: 24px; height: 24px; color: #fff; }
+  .wa-btn:hover { background: #1eae54; transform: translateY(-1px); }
   .call-picker-name { font-family: var(--font-body); font-size: 15px; font-weight: 700; color: var(--ink); }
   .call-picker-number { font-family: var(--font-display); font-size: 17px; font-weight: 500; color: var(--wine); letter-spacing: 0.01em; }
 

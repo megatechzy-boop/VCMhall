@@ -22,8 +22,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500&family=Noto+Serif+Devanagari:wght@500;600&display=swap" rel="stylesheet" />
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="/styles.css" />
-  <script src="/script.js?v=4032bdd8" defer></script>
+  <link rel="stylesheet" href="/styles.css?v=46d0ed59" />
+  <script src="/script.js?v=38615675" defer></script>
 </head>
 <body>
   
@@ -116,7 +116,7 @@
       <div class="nav-drawer-actions">
         <a class="button button-wine button-block" href="check-availability">Check Availability</a>
         <a class="button button-ghost button-block" href="tel:+919359567494" data-call-picker><svg class="icon" aria-hidden="true"><use href="#i-phone" /></svg> Call the Venue</a>
-        <a class="button button-ghost button-block" href="https://wa.me/919359567494" target="_blank" rel="noopener noreferrer"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp" /></svg> WhatsApp</a>
+        <a class="button button-ghost button-block" href="https://wa.me/919359567494" target="_blank" rel="noopener noreferrer" data-whatsapp-picker><svg class="icon" aria-hidden="true"><use href="#i-whatsapp" /></svg> WhatsApp</a>
       </div>
       <p class="nav-drawer-meta">Yashwantrao Chavan Smarak, Sector 27A, Pradhikaran, Nigdi, Pune – 411044<br />Mon – Sun: 9:00 AM – 10:00 PM</p>
     </div>
@@ -221,14 +221,14 @@
   </footer>
   <div class="float-actions" aria-label="Quick contact">
     <a href="tel:+919359567494" data-call-picker data-label="Call the venue" aria-label="Call the venue"><svg class="icon" aria-hidden="true"><use href="#i-phone" /></svg></a>
-    <a href="https://wa.me/919359567494" target="_blank" rel="noopener noreferrer" data-label="WhatsApp" aria-label="WhatsApp the venue"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp" /></svg></a>
+    <a href="https://wa.me/919359567494" target="_blank" rel="noopener noreferrer" data-label="WhatsApp" aria-label="WhatsApp the venue" data-whatsapp-picker><svg class="icon" aria-hidden="true"><use href="#i-whatsapp" /></svg></a>
     <a href="check-availability" data-label="Check availability" aria-label="Check availability"><svg class="icon" aria-hidden="true"><use href="#i-calendar" /></svg></a>
   </div>
 
   <div class="reading-progress" aria-hidden="true"><span></span></div>
   <button type="button" class="to-top" aria-label="Back to top"><svg class="icon" aria-hidden="true"><use href="#i-up" /></svg></button>
   <nav class="bottom-bar" aria-label="Quick actions">
-    <a href="https://wa.me/919359567494" target="_blank" rel="noopener noreferrer">
+    <a href="https://wa.me/919359567494" target="_blank" rel="noopener noreferrer" data-whatsapp-picker>
       <svg class="icon" aria-hidden="true"><use href="#i-whatsapp" /></svg>
       WhatsApp
     </a>
@@ -265,9 +265,9 @@
         <button type="button" class="call-picker-close" data-call-picker-close aria-label="Close"><svg class="icon" aria-hidden="true"><use href="#i-close" /></svg></button>
       </div>
       <ul class="call-picker-list">
-        <li><a href="tel:+919359567494" class="call-picker-item"><span class="call-picker-icon"><svg class="icon" aria-hidden="true"><use href="#i-phone" /></svg></span><span class="call-picker-text"><span class="call-picker-name">Jadhav Kedar</span><span class="call-picker-number">9359567494</span></span></a></li>
-        <li><a href="tel:+919834005348" class="call-picker-item"><span class="call-picker-icon"><svg class="icon" aria-hidden="true"><use href="#i-phone" /></svg></span><span class="call-picker-text"><span class="call-picker-name">Jadhav Prashant</span><span class="call-picker-number">9834005348</span></span></a></li>
-        <li><a href="tel:+919527926303" class="call-picker-item"><span class="call-picker-icon"><svg class="icon" aria-hidden="true"><use href="#i-phone" /></svg></span><span class="call-picker-text"><span class="call-picker-name">Shinde Vikas</span><span class="call-picker-number">9527926303</span></span></a></li>
+        <li><div class="contact-row"><a class="call-icon" href="tel:+919359567494" aria-label="Call Jadhav Kedar"><svg class="icon" aria-hidden="true"><use href="#i-phone" /></svg></a><div class="contact-info"><span class="call-picker-name">Jadhav Kedar</span><span class="call-picker-number">9359567494</span></div><a class="wa-btn" href="https://wa.me/919359567494?text=Hi%2C%20I%20came%20from%20your%20Late%20Venutai%20Chavan%20Multipurpose%20Hall%20website%20and%20would%20like%20to%20enquire%20about%20the%20hall." target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Jadhav Kedar"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp" /></svg></a></div></li>
+        <li><div class="contact-row"><a class="call-icon" href="tel:+919834005348" aria-label="Call Jadhav Prashant"><svg class="icon" aria-hidden="true"><use href="#i-phone" /></svg></a><div class="contact-info"><span class="call-picker-name">Jadhav Prashant</span><span class="call-picker-number">9834005348</span></div><a class="wa-btn" href="https://wa.me/919834005348?text=Hi%2C%20I%20came%20from%20your%20Late%20Venutai%20Chavan%20Multipurpose%20Hall%20website%20and%20would%20like%20to%20enquire%20about%20the%20hall." target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Jadhav Prashant"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp" /></svg></a></div></li>
+        <li><div class="contact-row"><a class="call-icon" href="tel:+919527926303" aria-label="Call Shinde Vikas"><svg class="icon" aria-hidden="true"><use href="#i-phone" /></svg></a><div class="contact-info"><span class="call-picker-name">Shinde Vikas</span><span class="call-picker-number">9527926303</span></div><a class="wa-btn" href="https://wa.me/919527926303?text=Hi%2C%20I%20came%20from%20your%20Late%20Venutai%20Chavan%20Multipurpose%20Hall%20website%20and%20would%20like%20to%20enquire%20about%20the%20hall." target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Shinde Vikas"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp" /></svg></a></div></li>
       </ul>
     </div>
   </div>
