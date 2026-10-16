@@ -752,7 +752,43 @@ def run(root: Path):
     (root / "robots.txt").write_text(build_robots(), encoding="utf-8")
     build_htaccess(root)
     build_sitemap(root)
-    (root / "llms.txt").write_text(f"# {BRAND}\n\n{BRAND} is a banquet and event venue at {ADDRESS}. The venue lists a Big Hall for up to 1,200 guests, a Small Hall for up to 350, a Dining Hall for 400 at a time, VIP A/C Dining for 50 at a time and up to eight A/C guest rooms. Listed hours are Monday to Sunday, 9:00 AM to 10:00 PM. Listed facilities include air-conditioning, acoustic system, LED screen, projector, Wi-Fi, parking, CCTV, fire alarm, lift, lobby and catering support for your own caterer.\n\nPhone contacts: Jadhav Kedar 9359567494; Jadhav Prashant 9834005348; Shinde Vikas 9527926303. Pricing is not published; contact the venue for a quote. An enquiry does not confirm a booking.\n\n## Pages\n- [Home](/): venue summary and spaces\n- [Big Hall](/big-hall): capacity and details for the Big Hall\n- [Small Hall](/small-hall): capacity and details for the Small Hall\n- [Events](/events): events supported by the venue\n- [Venue FAQs](/faq): concise answers about facilities and enquiries\n- [Facilities](/facilities): listed amenities\n- [Gallery](/gallery): venue photos\n- [Contact](/contact): address, phones and enquiry form\n- [Check Availability](/check-availability): send a date enquiry\n", encoding="utf-8")
+    llms_content = f"""# {BRAND}
+
+> Banquet and event venue at {ADDRESS}. Big Hall up to 1,200 guests, Small Hall up to 350, Dining Hall 400 at a time, VIP A/C Dining 50, up to 8 A/C guest rooms. Open Monday to Sunday, 9:00 AM to 10:00 PM.
+
+Facilities: air-conditioning, acoustic system, LED screen, projector, Wi-Fi, parking, CCTV, fire alarm, lift, lobby, catering support for your own caterer.
+Events: weddings, engagements, receptions, birthdays, naming ceremonies, family functions, corporate events, social gatherings.
+Contact: Jadhav Kedar 9359567494; Jadhav Prashant 9834005348; Shinde Vikas 9527926303.
+Pricing is not published; contact the venue for a quote. An enquiry does not confirm a booking.
+Last updated: 2026-10-16
+
+## Core pages
+- [Home](https://venutaihall.com/): venue summary and spaces
+- [Big Hall](https://venutaihall.com/big-hall): capacity up to 1,200 guests, details
+- [Small Hall](https://venutaihall.com/small-hall): capacity up to 350 guests, details
+- [Facilities](https://venutaihall.com/facilities): listed amenities
+- [Everything Included](https://venutaihall.com/everything-included): what the venue provides
+- [Events](https://venutaihall.com/events): events supported by the venue
+- [FAQ](https://venutaihall.com/faq): answers about facilities, capacity and enquiries
+- [Gallery](https://venutaihall.com/gallery): venue photos
+- [Contact](https://venutaihall.com/contact): address, phones, enquiry
+- [Check Availability](https://venutaihall.com/check-availability): send a date enquiry
+- [Venue Visit](https://venutaihall.com/visit): schedule a visit
+
+## Event and location pages
+- [Wedding hall in Nigdi, Pune](https://venutaihall.com/wedding-hall-nigdi-pune)
+- [Banquet hall in Nigdi, Pune](https://venutaihall.com/banquet-hall-nigdi-pune)
+- [Engagement hall in Nigdi, Pune](https://venutaihall.com/engagement-hall-nigdi-pune)
+- [Birthday party hall in Nigdi, Pune](https://venutaihall.com/birthday-party-hall-nigdi-pune)
+- [Corporate event venue in Nigdi, Pune](https://venutaihall.com/corporate-event-venue-nigdi-pune)
+- [Reception hall in Pradhikaran, Pune](https://venutaihall.com/reception-hall-pradhikaran-pune)
+- [Hall with A/C rooms in Nigdi, Pune](https://venutaihall.com/hall-with-ac-rooms-nigdi-pune)
+
+## Optional
+- [Privacy Policy](https://venutaihall.com/privacy-policy)
+- [Terms & Conditions](https://venutaihall.com/terms)
+"""
+    (root / "llms.txt").write_text(llms_content, encoding="utf-8")
     (root / "SEO-TODO.md").write_text(checklist(), encoding="utf-8")
     print("SEO/AEO/GEO pages, metadata, robots, redirects and sitemap updated")
 
