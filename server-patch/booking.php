@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/booking-store.php';
+require __DIR__ . '/security-store.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 header('Cache-Control: no-store');
@@ -27,6 +28,10 @@ try {
     }
     if (!empty($_POST['website'])) {
         booking_response(200, ['message' => 'Your request has been received.']);
+    }
+    $clientIp = rate_client_ip();
+    if (rate_count($db, 'enquiry_ip', $clientIp, 3600) >= 5 || rate_count($db, 'enquiry_ip', $clientIp, 86400) >= 15) {
+        booking_response(429, ['error' => 'Too many enquiries from this connection. Please call or WhatsApp the venue.']);
     }
 
     $row = [
@@ -86,6 +91,7 @@ try {
         $activity = $db->prepare("INSERT INTO booking_activity (booking_id, action, details) VALUES (?, 'enquiry_created', 'Website enquiry received')");
         $activity->execute([$id]);
         $db->commit();
+        rate_record($db, 'enquiry_ip', $clientIp);
     } catch (Throwable $error) {
         $db->rollBack();
         throw $error;

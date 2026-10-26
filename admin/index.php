@@ -5,6 +5,7 @@ if (!is_file($bookingStore)) $bookingStore = dirname(__DIR__) . '/server-patch/b
 require $bookingStore;
 require __DIR__ . '/dashboard-lib.php';
 require __DIR__ . '/settings-lib.php';
+require dirname(__DIR__) . '/server-patch/security-store.php';
 
 header('Cache-Control: no-store');
 header('X-Frame-Options: DENY');
@@ -45,10 +46,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $adminReturn = in_array($requestedReturn, ['bookings.php', 'bookings.php?tab=blocked'], true) ? $requestedReturn : 'index.php';
     $action = (string) ($_POST['action'] ?? '');
     if ($action === 'login' && !$loggedIn) {
-        $lockedUntil = (int) ($_SESSION['locked_until'] ?? 0);
-        if ($lockedUntil > time()) $notice = 'Too many attempts. Try again later.';
+        $username = trim((string) ($_POST['username'] ?? ''));
+        $loginIp = rate_client_ip();
+        // Failed sign-ins are counted in the database per IP and per username, so clearing cookies does not reset them.
+        if (rate_count($db, 'login_ip', $loginIp, 900) >= 20 || ($username !== '' && rate_count($db, 'login_user', $username, 900) >= 8)) $notice = 'Too many attempts. Try again in 15 minutes.';
         else {
-            $username = trim((string) ($_POST['username'] ?? ''));
             $password = (string) ($_POST['password'] ?? '');
             $user = null;
             if ($usersTableReady && $username !== '') {
@@ -59,10 +61,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $validUser = $user && password_verify($password, (string) $user['password_hash']);
             $validLegacy = !$usersTableReady && password_verify($password, $passwordHash);
             if ($validUser || $validLegacy) {
-                session_regenerate_id(true); $_SESSION['password_hash'] = $passwordHash; $_SESSION['admin_user_id'] = $user ? (int) $user['id'] : 0; $_SESSION['admin_role'] = $user['role'] ?? 'admin'; $_SESSION['admin_username'] = $user['username'] ?? 'admin'; $_SESSION['attempts'] = 0; $loggedIn = true;
+                session_regenerate_id(true); $_SESSION['password_hash'] = $passwordHash; $_SESSION['admin_user_id'] = $user ? (int) $user['id'] : 0; $_SESSION['admin_role'] = $user['role'] ?? 'admin'; $_SESSION['admin_username'] = $user['username'] ?? 'admin'; rate_clear($db, 'login_user', $username); $loggedIn = true;
             } else {
-                $_SESSION['attempts'] = (int) ($_SESSION['attempts'] ?? 0) + 1;
-                if ($_SESSION['attempts'] >= 5) { $_SESSION['locked_until'] = time() + 900; $_SESSION['attempts'] = 0; }
+                rate_record($db, 'login_ip', $loginIp);
+                if ($username !== '') rate_record($db, 'login_user', $username);
                 $notice = 'Incorrect username or password.';
             }
         }
