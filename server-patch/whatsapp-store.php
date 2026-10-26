@@ -28,6 +28,7 @@ function wa_ensure_schema(PDO $db): void
             read_at TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP)");
         $db->exec('CREATE INDEX IF NOT EXISTS wa_messages_phone ON wa_messages(phone, id)');
+        $db->exec("CREATE TABLE IF NOT EXISTS wa_templates (id INTEGER PRIMARY KEY AUTOINCREMENT, meta_id TEXT, name TEXT NOT NULL, language TEXT NOT NULL, category TEXT, status TEXT, reason TEXT, body TEXT, variable_count INTEGER, updated_at TEXT DEFAULT CURRENT_TIMESTAMP, UNIQUE(name, language))");
     } else {
         $db->exec("CREATE TABLE IF NOT EXISTS wa_messages (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -48,6 +49,13 @@ function wa_ensure_schema(PDO $db): void
             UNIQUE KEY wa_messages_wa_id (wa_id),
             KEY wa_messages_phone (phone, id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        $db->exec("CREATE TABLE IF NOT EXISTS wa_templates (
+            id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            meta_id VARCHAR(64) NULL, name VARCHAR(512) NOT NULL, language VARCHAR(15) NOT NULL,
+            category VARCHAR(20) NULL, status VARCHAR(30) NULL, reason VARCHAR(500) NULL, body TEXT NULL, variable_count TINYINT UNSIGNED NULL,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY wa_templates_name_lang (name(191), language)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     }
     $done = true;
 }
@@ -65,6 +73,8 @@ function wa_now(): string
 function wa_config(PDO $db, array $config): array
 {
     return [
+        // graph_api_base exists only for local testing against a mock; production uses Meta.
+        'base' => rtrim((string) ($config['graph_api_base'] ?? 'https://graph.facebook.com'), '/'),
         'phone_id' => booking_setting($db, 'whatsapp_phone_number_id'),
         'version' => booking_setting($db, 'whatsapp_api_version', 'v20.0'),
         'token' => booking_whatsapp_token($db, $config),
@@ -157,8 +167,8 @@ function wa_update_status(PDO $db, string $waId, string $status, string $error =
 function wa_api(array $wa, string $method, string $path, ?array $json = null): array
 {
     if (!function_exists('curl_init')) throw new RuntimeException('PHP cURL is required for WhatsApp.');
-    if ($wa['token'] === '' || $wa['phone_id'] === '') throw new RuntimeException('WhatsApp is not connected yet. Finish WhatsApp setup first.');
-    $ch = curl_init('https://graph.facebook.com/' . rawurlencode($wa['version']) . '/' . $path);
+    if ($wa['token'] === '') throw new RuntimeException('WhatsApp is not connected yet. Finish WhatsApp setup first.');
+    $ch = curl_init(($wa['base'] ?? 'https://graph.facebook.com') . '/' . rawurlencode($wa['version']) . '/' . $path);
     $headers = ['Authorization: Bearer ' . $wa['token']];
     $options = [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 20, CURLOPT_CUSTOMREQUEST => $method];
     if ($json !== null) {
@@ -176,25 +186,50 @@ function wa_api(array $wa, string $method, string $path, ?array $json = null): a
 /** Sends a text reply (or a template when $template is set) and records it. Returns the stored row id. */
 function wa_send(PDO $db, array $wa, string $phone, string $text, string $sentBy, bool $template = false): int
 {
+    if ($template) {
+        if ($wa['template'] === '') throw new RuntimeException('Set a chat re-open template in WhatsApp setup first.');
+        return wa_send_template($db, $wa, $phone, $wa['template'], $wa['template_lang'] ?: 'en', [], $sentBy);
+    }
+    $text = trim($text);
+    if ($text === '' || mb_strlen($text) > 4096) throw new InvalidArgumentException('Write a message of up to 4,096 characters.');
+    return wa_deliver($db, $wa, $phone, ['type' => 'text', 'text' => ['preview_url' => false, 'body' => $text]], 'text', $text, $sentBy);
+}
+
+/** Sends an approved template with body variables ({{1}}, {{2}} …) in order. */
+function wa_send_template(PDO $db, array $wa, string $phone, string $name, string $lang, array $params, string $sentBy, bool $record = true): int
+{
+    if (!preg_match('/^[a-z0-9_]{1,512}$/', $name)) throw new InvalidArgumentException('Invalid template name.');
+    $template = ['name' => $name, 'language' => ['code' => $lang ?: 'en']];
+    $known = wa_template_find($db, $name, $lang ?: 'en');
+    if ($known && $known['variable_count'] !== null) $params = array_slice($params, 0, (int) $known['variable_count']);
+    if ($params) {
+        // WhatsApp rejects template parameters with new lines, tabs or more than four spaces in a row.
+        $clean = array_map(static fn($v) => mb_substr(trim(preg_replace('/\s{2,}|[\r\n\t]+/u', ' ', (string) $v) ?? ''), 0, 200) ?: '-', array_values($params));
+        $template['components'] = [['type' => 'body', 'parameters' => array_map(static fn($v) => ['type' => 'text', 'text' => $v], $clean)]];
+        $params = $clean;
+    }
+    $preview = $known && $known['body'] !== '' ? preg_replace_callback('/\{\{(\d+)\}\}/', static fn($m) => (string) ($params[(int) $m[1] - 1] ?? ''), (string) $known['body']) : 'Template: ' . $name . ($params ? ' (' . implode(', ', $params) . ')' : '');
+    return wa_deliver($db, $wa, $phone, ['type' => 'template', 'template' => $template], 'template', (string) $preview, $sentBy, $record);
+}
+
+/** Sends one message; $record = false keeps internal alerts (e.g. to staff) out of the guest inbox. */
+function wa_deliver(PDO $db, array $wa, string $phone, array $message, string $type, string $text, string $sentBy, bool $record = true): int
+{
     wa_ensure_schema($db);
     $phone = wa_phone($phone);
     if (strlen($phone) < 10) throw new InvalidArgumentException('Invalid WhatsApp number.');
-    if ($template) {
-        if ($wa['template'] === '') throw new RuntimeException('Set a chat re-open template in WhatsApp setup first.');
-        $payload = ['messaging_product' => 'whatsapp', 'to' => $phone, 'type' => 'template', 'template' => ['name' => $wa['template'], 'language' => ['code' => $wa['template_lang'] ?: 'en']]];
-        $text = 'Template: ' . $wa['template'];
-    } else {
-        $text = trim($text);
-        if ($text === '' || mb_strlen($text) > 4096) throw new InvalidArgumentException('Write a message of up to 4,096 characters.');
-        $payload = ['messaging_product' => 'whatsapp', 'recipient_type' => 'individual', 'to' => $phone, 'type' => 'text', 'text' => ['preview_url' => false, 'body' => $text]];
-    }
+    if ($wa['phone_id'] === '') throw new RuntimeException('WhatsApp is not connected yet. Finish WhatsApp setup first.');
+    $payload = ['messaging_product' => 'whatsapp', 'recipient_type' => 'individual', 'to' => $phone] + $message;
     [$code, $response] = wa_api($wa, 'POST', rawurlencode($wa['phone_id']) . '/messages', $payload);
     $waId = (string) ($response['messages'][0]['id'] ?? '');
     $ok = $code >= 200 && $code < 300 && $waId !== '';
     $error = $ok ? null : mb_substr((string) ($response['error']['error_data']['details'] ?? $response['error']['message'] ?? 'WhatsApp did not accept the message.'), 0, 500);
-    $db->prepare("INSERT INTO wa_messages (wa_id, phone, direction, msg_type, body, status, error, sent_by, sent_at) VALUES (?, ?, 'out', ?, ?, ?, ?, ?, ?)")
-        ->execute([$ok ? $waId : null, $phone, $template ? 'template' : 'text', $text, $ok ? 'sent' : 'failed', $error, mb_substr($sentBy, 0, 80), wa_now()]);
-    $id = (int) $db->lastInsertId();
+    $id = 0;
+    if ($record) {
+        $db->prepare("INSERT INTO wa_messages (wa_id, phone, direction, msg_type, body, status, error, sent_by, sent_at) VALUES (?, ?, 'out', ?, ?, ?, ?, ?, ?)")
+            ->execute([$ok ? $waId : null, $phone, $type, mb_substr($text, 0, 4096), $ok ? 'sent' : 'failed', $error, mb_substr($sentBy, 0, 80), wa_now()]);
+        $id = (int) $db->lastInsertId();
+    }
     if (!$ok) {
         error_log('WhatsApp send failed with HTTP ' . $code . '.');
         throw new RuntimeException('Message not sent: ' . $error);
@@ -219,4 +254,50 @@ function wa_unread_count(PDO $db): int
     } catch (Throwable) {
         return 0;
     }
+}
+
+function wa_template_find(PDO $db, string $name, string $lang): ?array
+{
+    try {
+        $query = $db->prepare('SELECT * FROM wa_templates WHERE name = ? AND language = ?');
+        $query->execute([$name, $lang]);
+        $row = $query->fetch();
+        return $row ?: null;
+    } catch (Throwable) {
+        return null;
+    }
+}
+
+function wa_template_variable_count(string $body): int
+{
+    preg_match_all('/\{\{(\d+)\}\}/', $body, $m);
+    return $m[1] ? max(array_map('intval', $m[1])) : 0;
+}
+
+/** Saves one template as reported by Meta (list sync or create response). */
+function wa_template_store(PDO $db, array $t): void
+{
+    $body = '';
+    foreach ($t['components'] ?? [] as $component) if (strtoupper((string) ($component['type'] ?? '')) === 'BODY') $body = (string) ($component['text'] ?? '');
+    $name = (string) ($t['name'] ?? '');
+    $lang = (string) ($t['language'] ?? '');
+    if ($name === '' || $lang === '') return;
+    $values = [(string) ($t['id'] ?? ''), (string) ($t['category'] ?? ''), (string) ($t['status'] ?? ''), mb_substr((string) ($t['rejected_reason'] ?? ''), 0, 500), $body, wa_template_variable_count($body), wa_now(), $name, $lang];
+    $update = $db->prepare('UPDATE wa_templates SET meta_id = ?, category = ?, status = ?, reason = ?, body = ?, variable_count = ?, updated_at = ? WHERE name = ? AND language = ?');
+    $update->execute($values);
+    if ($update->rowCount() === 0 && !wa_template_find($db, $name, $lang)) {
+        $db->prepare('INSERT INTO wa_templates (meta_id, category, status, reason, body, variable_count, updated_at, name, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')->execute($values);
+    }
+}
+
+/** Applies a message_template_status_update webhook event. */
+function wa_template_status_event(PDO $db, array $value): void
+{
+    $name = (string) ($value['message_template_name'] ?? '');
+    $lang = (string) ($value['message_template_language'] ?? '');
+    $event = strtoupper((string) ($value['event'] ?? ''));
+    if ($name === '' || $lang === '' || $event === '') return;
+    $reason = (string) ($value['reason'] ?? '');
+    $db->prepare('UPDATE wa_templates SET status = ?, reason = ?, updated_at = ? WHERE name = ? AND language = ?')
+        ->execute([mb_substr($event, 0, 30), $reason !== '' && $reason !== 'NONE' ? mb_substr($reason, 0, 500) : null, wa_now(), $name, $lang]);
 }

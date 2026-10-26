@@ -14,9 +14,11 @@
     const action = event.submitter?.value || event.target.elements.namedItem('action')?.value || '';
     const prompts = {
       event_delete: 'Delete this event type? Existing bookings keep their saved event names.',
-      test_email: 'Send a test email to the venue email address now?'
+      test_email: 'Send a test email to the venue email address now?',
+      test_alert: 'Send a test lead alert to every active team member now?'
     };
-    if (prompts[action] && !window.confirm(prompts[action])) event.preventDefault();
+    const prompt = event.submitter?.dataset.confirm || prompts[action];
+    if (prompt && !window.confirm(prompt)) event.preventDefault();
   });
 
   const form = document.querySelector('.popup-form');

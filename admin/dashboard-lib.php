@@ -128,7 +128,7 @@ function admin_valid_datetime(string $value): ?string
 function admin_filter_input(array $input): array
 {
     $tabs = ['all', 'enquiries', 'bookings', 'cancelled', 'blocked'];
-    $sources = ['website', 'whatsapp', 'instagram', 'phone', 'walk-in', 'other'];
+    $sources = ['website', 'meta-ads', 'whatsapp', 'instagram', 'phone', 'walk-in', 'other'];
     $tab = strtolower(trim((string) ($input['tab'] ?? 'all')));
     $source = strtolower(trim((string) ($input['source'] ?? '')));
     $hall = strtolower(trim((string) ($input['hall'] ?? '')));

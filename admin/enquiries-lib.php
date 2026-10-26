@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 const ENQUIRY_STATUSES = ['pending', 'in_discussion', 'quote_sent', 'follow_up', 'converted', 'cancelled'];
-const ENQUIRY_SOURCES = ['website', 'instagram', 'whatsapp', 'phone', 'walk-in', 'other'];
+const ENQUIRY_SOURCES = ['website', 'meta-ads', 'instagram', 'whatsapp', 'phone', 'walk-in', 'other'];
 
 function enquiry_schema_ready(PDO $db): bool
 {

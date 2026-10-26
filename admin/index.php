@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION = []; session_destroy(); header('Location: index.php'); exit;
     } elseif ($loggedIn) {
         if (!admin_schema_ready($db)) admin_finish('Admin setup is incomplete. Please contact the person who manages the website before making changes.');
-        $sources = ['website', 'whatsapp', 'instagram', 'phone', 'walk-in', 'other'];
+        $sources = ['website', 'meta-ads', 'whatsapp', 'instagram', 'phone', 'walk-in', 'other'];
         try {
             if ($action === 'block') {
                 $date = trim((string) ($_POST['date'] ?? ''));
@@ -170,7 +170,7 @@ if ($loggedIn) {
     }
 }
 $statusLabels = ['pending' => 'New enquiry', 'in_discussion' => 'In discussion', 'quote_sent' => 'Quote sent', 'follow_up' => 'Reminder set', 'converted' => 'Booking created', 'confirmed' => 'Booked', 'blocked' => 'Date unavailable', 'cancelled' => 'Cancelled'];
-$sourceLabels = ['website' => 'Website', 'whatsapp' => 'WhatsApp', 'instagram' => 'Instagram', 'phone' => 'Phone', 'walk-in' => 'Walk-in', 'other' => 'Other', 'admin' => 'Other'];
+$sourceLabels = ['website' => 'Website', 'meta-ads' => 'Meta Ads', 'whatsapp' => 'WhatsApp', 'instagram' => 'Instagram', 'phone' => 'Phone', 'walk-in' => 'Walk-in', 'other' => 'Other', 'admin' => 'Other'];
 $dashboardData = ['rows' => [], 'payments' => [], 'activity' => [], 'today' => booking_today(), 'paymentLimit' => 5];
 ?><!doctype html>
 <html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="robots" content="noindex, nofollow" /><title>Venue Overview | Venue Admin</title><link rel="stylesheet" href="admin.css?v=<?= filemtime(__DIR__ . '/admin.css') ?>" /><link rel="stylesheet" href="theme.css?v=<?= filemtime(__DIR__ . '/theme.css') ?>"></head>
@@ -192,7 +192,7 @@ $dashboardData = ['rows' => [], 'payments' => [], 'activity' => [], 'today' => b
 <?php foreach ($upcomingEvents as $event): ?><tr><td><strong><?= h(date('d M Y', strtotime($event['event_date']))) ?></strong><small><?= h(date('l', strtotime($event['event_date']))) ?></small></td><td><?= h($event['event_type']) ?></td><td><?= h($event['name']) ?></td><td><?= h(ucfirst($event['hall'])) ?> Hall</td></tr><?php endforeach; ?>
 <?php if (!$upcomingEvents): ?><tr><td colspan="4" class="empty-state"><strong>No confirmed events in the next 7 days</strong></td></tr><?php endif; ?></tbody></table></div></div>
 <div class="records-card compact-records"><div class="section-heading"><div><p class="eyebrow">MOST RECENT</p><h2>Latest 5 enquiries</h2></div><a class="clear-button" href="enquiries.php">View all</a></div><div class="table-wrap"><table><thead><tr><th>Received</th><th>Guest</th><th>Event</th><th>Status</th></tr></thead><tbody>
-<?php foreach ($latestEnquiries as $enquiry): ?><tr><td><strong><?= h(date('d M Y', strtotime($enquiry['created_at']))) ?></strong></td><td><?= h($enquiry['name']) ?></td><td><?= h($enquiry['event_type']) ?><small><?= h(date('d M Y', strtotime($enquiry['event_date']))) ?> · <?= h(ucfirst($enquiry['hall'])) ?> Hall</small></td><td><span class="status-badge status-<?= h($enquiry['status']) ?>"><?= h($statusLabels[$enquiry['status']] ?? $enquiry['status']) ?></span></td></tr><?php endforeach; ?>
+<?php foreach ($latestEnquiries as $enquiry): ?><tr><td><strong><?= h(date('d M Y', strtotime($enquiry['created_at']))) ?></strong></td><td><?= h($enquiry['name']) ?></td><td><?= h($enquiry['event_type']) ?><small><?= h($enquiry['event_date'] ? date('d M Y', strtotime($enquiry['event_date'])) : 'Date not given') ?> · <?= h(ucfirst($enquiry['hall'])) ?> Hall</small></td><td><span class="status-badge status-<?= h($enquiry['status']) ?>"><?= h($statusLabels[$enquiry['status']] ?? $enquiry['status']) ?></span></td></tr><?php endforeach; ?>
 <?php if (!$latestEnquiries): ?><tr><td colspan="4" class="empty-state"><strong>No enquiries yet</strong></td></tr><?php endif; ?></tbody></table></div></div>
 </section>
 

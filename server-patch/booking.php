@@ -2,6 +2,8 @@
 declare(strict_types=1);
 require __DIR__ . '/booking-store.php';
 require __DIR__ . '/security-store.php';
+require __DIR__ . '/whatsapp-store.php';
+require __DIR__ . '/leads-store.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 header('Cache-Control: no-store');
@@ -101,7 +103,16 @@ try {
     } catch (Throwable $error) {
         error_log('Booking email error: ' . $error->getMessage());
     }
-    booking_response(201, ['message' => 'Enquiry saved. Our team will contact you. Your date is not booked yet.', 'reference' => $id]);
+    http_response_code(201);
+    echo json_encode(['message' => 'Enquiry saved. Our team will contact you. Your date is not booked yet.', 'reference' => $id], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    // Guest and team alerts run after the visitor already has the response.
+    lead_finish_response();
+    try {
+        lead_notify($db, booking_config(), ['id' => $id, 'source' => 'website', 'message' => $stored_message] + $row);
+    } catch (Throwable $error) {
+        error_log('Lead alerts error: ' . $error->getMessage());
+    }
+    exit;
 } catch (Throwable $error) {
     error_log('Booking error: ' . $error->getMessage());
     booking_response(503, ['error' => 'Booking service is temporarily unavailable. Please call the venue.']);

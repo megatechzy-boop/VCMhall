@@ -97,3 +97,24 @@ Meta setup (use a NEW dedicated number — it will only work through this inbox,
 4. Copy the Callback URL + Verify token shown on that page into Meta → WhatsApp → Configuration → Webhook → Verify and save, then subscribe to the `messages` field.
 5. Create and get approval for a no-variable "re-open chat" template; enter its name on the setup page (used after the 24-hour reply window closes).
 6. Test: send a WhatsApp to the new number from any phone → it should appear in Admin → WhatsApp Inbox within ~10 seconds; reply from the inbox.
+
+## (i) Security limits, lead alerts, Meta Lead Ads, WhatsApp templates (manual upload)
+Back up first. Upload (in addition to section h):
+- `server-patch/booking.php`, `server-patch/booking-store.php` → `public_html/` (same place as the current booking.php / booking-store.php — check where the live root `booking.php` loads them from)
+- `server-patch/security-store.php`, `server-patch/leads-store.php`, `server-patch/whatsapp-store.php` → `public_html/server-patch/` **and** next to the live `booking-store.php` if that is not in `server-patch/`
+- `whatsapp-webhook.php` → `public_html/`
+- `admin/`: `index.php`, `enquiries.php`, `enquiries-lib.php`, `dashboard-lib.php`, `admin.js`, `settings.js`, `settings.php`, `settings-controller.php`, `sidebar.php`, `theme.css`, and new `lead-alerts.php`, `wa-templates.php`, `templates.js`
+
+New tables (`rate_hits`, `lead_recipients`, `lead_notifications`, `meta_leads`, `wa_templates`) are created automatically.
+
+Recommended one-time SQL (phpMyAdmin), so Meta leads without an event date can be saved as enquiries:
+`ALTER TABLE bookings MODIFY event_date DATE NULL;`
+Without it, such leads are still kept in `meta_leads` and the team is still alerted, but no enquiry row is created.
+
+After upload — admin steps:
+1. Settings → WhatsApp setup: Business Account ID + token (needs `whatsapp_business_messaging`, `whatsapp_business_management`).
+2. Settings → WhatsApp templates: Submit `enquiry_received` and `new_lead_alert`. Wait for Approved (Sync button refreshes).
+3. Settings → Lead alerts: add team members, keep rules on, click "Send test alert to team".
+4. Meta Lead Ads: Meta app → Webhooks → Page → same callback URL + verify token → subscribe `leadgen`. Also subscribe the WhatsApp Business Account to `message_template_status_update`. Paste Page ID + long-lived Page token (`leads_retrieval`, `pages_manage_metadata`, `pages_show_list`) on the Lead alerts page. Subscribe the Page to the app (Graph: `POST /{page-id}/subscribed_apps?subscribed_fields=leadgen`). Test with Meta's Lead Ads Testing Tool.
+
+Also fixed: the server-mail fallback (used when no Resend key is saved) passed headers as a numbered array, which PHP rejects — every fallback email was failing.

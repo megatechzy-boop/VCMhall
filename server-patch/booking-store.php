@@ -112,7 +112,7 @@ function booking_send_email_message(PDO $db,array $config,string $to,string $sub
         error_log('Resend email request failed with HTTP '.$status.'.');return ['sent'=>false,'provider'=>'resend','message'=>'Resend could not accept the email. Check the API key, sending permission, and verified sender domain.'];
     }
     $headers=['From: '.mb_encode_mimeheader($fromName,'UTF-8').' <'.$from.'>','Content-Type: text/plain; charset=UTF-8'];if(filter_var($reply,FILTER_VALIDATE_EMAIL))$headers[]='Reply-To: '.$reply;
-    $sent=@mail($to,$subject,$body,$headers);return ['sent'=>$sent,'provider'=>'server','message'=>$sent?'Accepted by the website mail server.':'The website mail server could not send this email.'];
+    $sent=@mail($to,'=?UTF-8?B?'.base64_encode($subject).'?=',$body,implode("\r\n",$headers));return ['sent'=>$sent,'provider'=>'server','message'=>$sent?'Accepted by the website mail server.':'The website mail server could not send this email.'];
 }
 
 function booking_today(): string

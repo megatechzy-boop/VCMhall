@@ -402,3 +402,28 @@ Verification:
 - Inbox API: 401 signed out, 403 bad CSRF, 409 closed window, 422 when not connected / no template, search with % and _ safe.
 - Screenshots 1440px and 390px for dashboard, enquiries, bookings, inbox, WhatsApp setup, settings: no overflow, no console/CSP errors.
 - Not tested against the live Meta API (no credentials in this environment).
+
+---
+Date: 2026-10-26
+Group: Security limits + lead alerts + Meta Lead Ads + WhatsApp templates
+Branch: claude/magical-edison-c0pjzz
+Status: verified locally against a mock Graph API; pushed to branch. Needs manual upload — DEPLOY-MANUAL.md (i).
+
+What changed:
+- Login lock now in the database (`rate_hits`): 20 failures per IP / 8 per username per 15 min; survives cookie clearing.
+- Website enquiries: 5 per hour / 15 per day per IP (honeypot unchanged).
+- Settings redirects no longer point at 5 missing pages.
+- Lead alerts (`admin/lead-alerts.php`, `server-patch/leads-store.php`): unlimited team members; guest WhatsApp template + email; team WhatsApp template + email; per-message log; test button. Website form responds first, alerts run after (litespeed/fastcgi finish request).
+- Meta Lead Ads via the same webhook (`object: page`, `leadgen`): lead fetched with the Page token, mapped to name/phone/email/event/date/guests/hall, extra answers + campaign kept in the message, saved as source "Meta Ads", deduplicated by leadgen_id.
+- WhatsApp templates (`admin/wa-templates.php`): ready-made templates, create with example values, sync from Meta, status webhook, resubmit rejected, delete, "use for guest/team/inbox re-open".
+- "Meta Ads" source label everywhere; enquiries without a date show "Date not given".
+- Fixed server-mail fallback header bug in booking-store.php.
+
+Verification:
+- php -l all PHP, node --check all admin JS: clean. No PHP warnings in server log.
+- Rate limits: 9th sign-in with fresh cookies blocked; 6th enquiry → 429.
+- Website lead: 201 in 0.03 s; guest + team WhatsApp sent via mock; failed number logged; paused member skipped.
+- Meta leadgen: signed webhook → lead fetched, enquiry ENQ-000012 saved, alerts sent; replay ignored.
+- Templates: sync, invalid body rejected with message and draft kept, create, use-for, resubmit, delete, status webhook → Approved.
+- 1440px and 390px screenshots of Lead alerts and WhatsApp templates: no overflow, no console errors.
+- Not run against real Meta (no credentials). Email not delivered locally (no mail server); logged as failed as expected.

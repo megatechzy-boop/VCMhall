@@ -22,7 +22,7 @@
   const backdrop = document.getElementById('drawerBackdrop');
   const csrf = document.querySelector('input[name="csrf"]')?.value || '';
   const statusLabels = { pending: 'New enquiry', in_discussion: 'In discussion', quote_sent: 'Quote sent', follow_up: 'Reminder set', converted: 'Booking created', confirmed: 'Booked', blocked: 'Date unavailable', cancelled: 'Cancelled', completed: 'Completed' };
-  const sourceLabels = { website: 'Website', whatsapp: 'WhatsApp', instagram: 'Instagram', phone: 'Phone', 'walk-in': 'Walk-in', other: 'Other', admin: 'Added by staff' };
+  const sourceLabels = { website: 'Website', 'meta-ads': 'Meta Ads', whatsapp: 'WhatsApp', instagram: 'Instagram', phone: 'Phone', 'walk-in': 'Walk-in', other: 'Other', admin: 'Added by staff' };
   const paymentMethodLabels = { upi: 'UPI', cash: 'Cash', 'bank-transfer': 'Bank transfer', card: 'Card', cheque: 'Cheque', other: 'Other' };
   const money = (value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(value || 0));
   const dateText = (value, withTime = false) => value ? new Intl.DateTimeFormat('en-IN', withTime ? { dateStyle: 'medium', timeStyle: 'short' } : { dateStyle: 'medium' }).format(new Date(value.replace(' ', 'T'))) : 'Not set';

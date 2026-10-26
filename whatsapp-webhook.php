@@ -1,11 +1,13 @@
 <?php
 declare(strict_types=1);
 
-// Meta WhatsApp Cloud API webhook: verification handshake (GET) and incoming events (POST).
+// Meta webhook for the WhatsApp Business Account (messages, template status) and the
+// Facebook Page (Lead Ads leadgen): verification handshake (GET) and events (POST).
 $store = __DIR__ . '/booking-store.php';
 if (!is_file($store)) $store = __DIR__ . '/server-patch/booking-store.php';
 require $store;
 require __DIR__ . '/server-patch/whatsapp-store.php';
+require __DIR__ . '/server-patch/leads-store.php';
 
 header('Content-Type: text/plain; charset=utf-8');
 header('Cache-Control: no-store');
@@ -49,12 +51,38 @@ if (!is_array($payload)) {
     exit('Invalid payload');
 }
 
+$leadgen = [];
 try {
-    wa_handle_webhook($db, $payload, $wa['phone_id']);
+    if (($payload['object'] ?? '') === 'page') {
+        foreach ($payload['entry'] ?? [] as $entry) {
+            foreach ($entry['changes'] ?? [] as $change) {
+                if (($change['field'] ?? '') === 'leadgen' && is_array($change['value'] ?? null)) $leadgen[] = $change['value'];
+            }
+        }
+    } else {
+        wa_handle_webhook($db, $payload, $wa['phone_id']);
+        foreach ($payload['entry'] ?? [] as $entry) {
+            foreach ($entry['changes'] ?? [] as $change) {
+                if (($change['field'] ?? '') === 'message_template_status_update') wa_template_status_event($db, (array) ($change['value'] ?? []));
+            }
+        }
+    }
 } catch (Throwable $error) {
     // Meta retries non-2xx responses, so a storage failure is reported back for a retry.
-    error_log('WhatsApp webhook storage: ' . $error->getMessage());
+    error_log('Meta webhook storage: ' . $error->getMessage());
     http_response_code(500);
     exit('Error');
 }
-exit('OK');
+echo 'OK';
+if ($leadgen) {
+    // Reply to Meta first; fetching each lead and sending alerts can take several seconds.
+    lead_finish_response();
+    foreach ($leadgen as $value) {
+        try {
+            meta_handle_leadgen($db, $config, $value);
+        } catch (Throwable $error) {
+            error_log('Meta leadgen: ' . $error->getMessage());
+        }
+    }
+}
+exit;
