@@ -81,3 +81,19 @@ If you skip step 1, the live site breaks (every nav link 404s). The htaccess + t
 
 ## (g) Google Maps loading card (footer map)
 The footer map's media container has a dark background (`--wine-deep`) so the iframe's loading flash is dark, not white. The Google embed's place-card popover (the venue name at top-left of the map) cannot be removed via the standard embed URL — that requires the paid Maps Embed API with `attribution_display=false` or the JS API. The dark container is the no-cost fix for the white-box flash.
+
+## (h) Admin redesign + WhatsApp Inbox (manual upload — .cpanel.yml does not copy PHP)
+Back up `public_html/admin/` first. Then upload:
+- `whatsapp-webhook.php` → `public_html/whatsapp-webhook.php`
+- `server-patch/whatsapp-store.php` → `public_html/server-patch/whatsapp-store.php`
+- `admin/` changed files → `public_html/admin/`: `sidebar.php`, `index.php`, `enquiries.php`, `enquiries.js`, `bookings.php`, `settings-view.php`, `whatsapp.php`, `whatsapp-usage.php`, and the new `theme.css`, `inbox.php`, `inbox.js`, `inbox.css`, `inbox-api.php`, `inbox-media.php`.
+
+No SQL to run: the `wa_messages` table is created automatically on first use.
+
+Meta setup (use a NEW dedicated number — it will only work through this inbox, not the WhatsApp phone app):
+1. developers.facebook.com → create a Business app → add WhatsApp → add and verify the new phone number.
+2. Business Settings → System users → create a permanent token with `whatsapp_business_messaging` + `whatsapp_business_management`.
+3. Admin → Settings → WhatsApp setup: enter Phone Number ID, token, App Secret (App settings → Basic) and save.
+4. Copy the Callback URL + Verify token shown on that page into Meta → WhatsApp → Configuration → Webhook → Verify and save, then subscribe to the `messages` field.
+5. Create and get approval for a no-variable "re-open chat" template; enter its name on the setup page (used after the 24-hour reply window closes).
+6. Test: send a WhatsApp to the new number from any phone → it should appear in Admin → WhatsApp Inbox within ~10 seconds; reply from the inbox.

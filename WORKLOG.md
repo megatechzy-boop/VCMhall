@@ -382,3 +382,23 @@ Verification:
 - PHP syntax checks passed for admin/settings.php, admin/index.php, admin/enquiries.php, and server-patch/booking-store.php.
 - Dummy-key encryption round-trip passed; no real key or provider request used.
 - Token-pattern scan on staged changes found 0 matches.
+
+---
+Date: 2026-10-26
+Group: Admin modern redesign + WhatsApp Inbox
+Branch: claude/magical-edison-c0pjzz
+Status: verified locally, pushed to branch (not main). Needs manual upload — see DEPLOY-MANUAL.md (h).
+
+What changed:
+- New `admin/theme.css` loaded last on every admin page: light sidebar, Inter/system font, brand-wine accent, soft cards, pill statuses, 2-column stats on mobile. Sidebar uses inline SVG icons and shows the signed-in user.
+- WhatsApp Inbox (`admin/inbox.php` + `inbox.js`/`inbox.css`/`inbox-api.php`/`inbox-media.php`): chat list with unread counts and search, chat thread with photos/files/audio, delivery ticks, reply box, 24-hour window notice with template fallback, linked enquiries/bookings by phone, "New enquiry from chat" prefill. Polls every 5–10 s while the tab is open. Unread badge in the sidebar.
+- `whatsapp-webhook.php` + `server-patch/whatsapp-store.php`: Meta webhook (verify token handshake, X-Hub-Signature-256 check with the encrypted App Secret), stores messages and delivery statuses; `wa_messages` table auto-created (MySQL + SQLite).
+- WhatsApp setup page: App Secret, re-open template + language, generated verify token, callback URL. Its inline `<style>` (blocked by the page CSP) moved into theme.css.
+- Fixed broken "·" byte (Latin-1) in the dashboard's latest-enquiries list.
+
+Verification:
+- php -l on all admin, server-patch and webhook PHP: clean. node --check inbox.js, enquiries.js: clean.
+- Local PHP + SQLite: webhook verify (200/403), signed POST stored, bad signature 403, duplicate message ignored, status updates never downgrade.
+- Inbox API: 401 signed out, 403 bad CSRF, 409 closed window, 422 when not connected / no template, search with % and _ safe.
+- Screenshots 1440px and 390px for dashboard, enquiries, bookings, inbox, WhatsApp setup, settings: no overflow, no console/CSP errors.
+- Not tested against the live Meta API (no credentials in this environment).
