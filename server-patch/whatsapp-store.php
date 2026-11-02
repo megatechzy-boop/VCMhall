@@ -4,6 +4,57 @@ declare(strict_types=1);
 // WhatsApp Cloud API inbox: message storage, webhook parsing and sending.
 // Requires booking-store.php to be loaded first (booking_db, booking_setting, secrets).
 
+// Fallbacks for an older live booking-store.php; kept identical to server-patch/booking-store.php
+// so secrets encrypted by either copy still decrypt.
+if (!function_exists('booking_setting')) {
+    function booking_setting(PDO $db, string $key, string $default = ''): string
+    {
+        try { $query=$db->prepare('SELECT setting_value FROM settings WHERE setting_key=?'); $query->execute([$key]); $value=$query->fetchColumn(); return $value===false?$default:(string)$value; }
+        catch (Throwable $error) { return $default; }
+    }
+}
+if (!function_exists('booking_setting_save')) {
+    function booking_setting_save(PDO $db, string $key, string $value, string $group): void
+    {
+        $sql=$db->getAttribute(PDO::ATTR_DRIVER_NAME)==='sqlite'
+            ? 'INSERT INTO settings(setting_key,setting_value,setting_group,updated_at) VALUES(?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(setting_key) DO UPDATE SET setting_value=excluded.setting_value,setting_group=excluded.setting_group,updated_at=CURRENT_TIMESTAMP'
+            : 'INSERT INTO settings(setting_key,setting_value,setting_group) VALUES(?,?,?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value),setting_group=VALUES(setting_group)';
+        $query=$db->prepare($sql);$query->execute([$key,$value,$group]);
+    }
+}
+if (!function_exists('booking_email_crypto_key')) {
+    function booking_email_crypto_key(array $config): string
+    {
+        $material=(string)($config['admin_password_hash']??'');
+        if(strlen($material)<40||!function_exists('openssl_encrypt'))throw new RuntimeException('Secure email-key storage is unavailable.');
+        return hash('sha256','VCMhall Resend secret v1|'.$material,true);
+    }
+}
+if (!function_exists('booking_encrypt_resend_key')) {
+    function booking_encrypt_resend_key(string $apiKey,array $config): string
+    {
+        $nonce=random_bytes(12);$tag='';$cipher=openssl_encrypt($apiKey,'aes-256-gcm',booking_email_crypto_key($config),OPENSSL_RAW_DATA,$nonce,$tag);
+        if($cipher===false)throw new RuntimeException('The Resend key could not be secured.');
+        return 'enc:v1:'.base64_encode($nonce.$tag.$cipher);
+    }
+}
+if (!function_exists('booking_decrypt_secret')) {
+    function booking_decrypt_secret(string $stored,array $config): string
+    {
+        if(!str_starts_with($stored,'enc:v1:'))return '';
+        $raw=base64_decode(substr($stored,7),true);if($raw===false||strlen($raw)<29)return '';
+        $plain=openssl_decrypt(substr($raw,28),'aes-256-gcm',booking_email_crypto_key($config),OPENSSL_RAW_DATA,substr($raw,0,12),substr($raw,12,16));
+        return is_string($plain)?$plain:'';
+    }
+}
+if (!function_exists('booking_whatsapp_token')) {
+    function booking_whatsapp_token(?PDO $db,array $config): string
+    {
+        if(!$db)return '';
+        return booking_decrypt_secret(booking_setting($db,'whatsapp_access_token_enc'),$config);
+    }
+}
+
 const WA_STATUS_RANK = ['queued' => 0, 'sent' => 1, 'delivered' => 2, 'read' => 3, 'failed' => 4];
 
 function wa_ensure_schema(PDO $db): void
