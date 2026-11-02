@@ -165,6 +165,50 @@ function lead_finish_response(): void
     @set_time_limit(120);
 }
 
+/* ---------- Booking messages to the guest ---------- */
+
+// Template names and variable order must match the templates submitted from the admin templates page.
+const BOOKING_WA_TEMPLATES = ['confirmed' => 'booking_confirmed', 'payment' => 'payment_received', 'reminder' => 'event_reminder'];
+
+function booking_reference(int $id): string
+{
+    return 'VCM-' . str_pad((string) $id, 6, '0', STR_PAD_LEFT);
+}
+
+/** WhatsApps the guest about a confirmed booking, a payment or the coming event. Never throws; every attempt is logged. */
+function lead_booking_whatsapp(PDO $db, array $config, int $bookingId, string $kind, float $amount = 0): bool
+{
+    $template = BOOKING_WA_TEMPLATES[$kind] ?? '';
+    $number = '';
+    try {
+        lead_ensure_schema($db);
+        if ($template === '' || booking_setting($db, "booking_{$kind}_whatsapp", '1') !== '1') return false;
+        $query = $db->prepare("SELECT b.*, COALESCE((SELECT SUM(amount) FROM booking_payments p WHERE p.booking_id = b.id), 0) paid FROM bookings b WHERE b.id = ? AND b.record_type = 'booking'");
+        $query->execute([$bookingId]);
+        $booking = $query->fetch();
+        if (!$booking) return false;
+        $number = lead_wa_number((string) $booking['phone']);
+        if ($number === '') { lead_log($db, $bookingId, 'customer', 'whatsapp', (string) $booking['phone'], 'skipped', 'Invalid WhatsApp number.'); return false; }
+        $wa = wa_config($db, $config);
+        if ($wa['token'] === '' || $wa['phone_id'] === '') { lead_log($db, $bookingId, 'customer', 'whatsapp', $number, 'skipped', 'WhatsApp is not connected yet.'); return false; }
+        $name = $booking['name'] ?: 'there';
+        $event = $booking['event_type'] ?: 'event';
+        $date = lead_event_date_label($booking['event_date'] ?? null);
+        $money = static fn(float $v): string => number_format($v, 0, '.', ',');
+        $params = match ($kind) {
+            'confirmed' => [$name, $event, $date, booking_reference($bookingId)],
+            'payment' => [$name, $money($amount), booking_reference($bookingId), $money(max(0, (float) $booking['total_amount'] - (float) $booking['paid']))],
+            'reminder' => [$name, $event, $date],
+        };
+        wa_send_template($db, $wa, $number, $template, 'en', $params, 'booking-alerts');
+        lead_log($db, $bookingId, 'customer', 'whatsapp', $number, 'sent', 'Template ' . $template);
+        return true;
+    } catch (Throwable $error) {
+        lead_log($db, $bookingId, 'customer', 'whatsapp', $number, 'failed', 'Template ' . $template . ': ' . $error->getMessage());
+        return false;
+    }
+}
+
 /* ---------- Meta Lead Ads ---------- */
 
 function meta_page_token(PDO $db, array $config): string

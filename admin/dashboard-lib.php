@@ -91,6 +91,14 @@ function admin_convert_enquiry(PDO $db, int $enquiryId): int
     }
 }
 
+/** WhatsApps the guest (confirmed / payment); returns true when Meta accepted it. Failures are logged in Lead alerts. */
+function admin_booking_whatsapp(PDO $db, int $bookingId, string $kind, float $amount = 0): bool
+{
+    require_once dirname(__DIR__) . '/server-patch/whatsapp-store.php';
+    require_once dirname(__DIR__) . '/server-patch/leads-store.php';
+    return lead_booking_whatsapp($db, booking_config(), $bookingId, $kind, $amount);
+}
+
 function admin_record_payment(PDO $db, int $bookingId, float $amount, string $method, string $reference, string $notes, int $limit, array $methods): void
 {
     if ($bookingId < 1 || !is_finite($amount) || $amount <= 0 || $amount > 99999999 || !in_array($method, $methods, true) || admin_text_length($reference) > 100 || admin_text_length($notes) > 500) {

@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             if (in_array($action, ['confirm', 'cancel'], true)) {
                 $id = admin_id(); if (!$id) admin_finish('Please select an item and try again.');
-                if ($action === 'confirm') { $bookingId = admin_convert_enquiry($db, $id); admin_finish('Booking confirmed. Reference: VCM-' . str_pad((string) $bookingId, 6, '0', STR_PAD_LEFT) . '.'); }
+                if ($action === 'confirm') { $bookingId = admin_convert_enquiry($db, $id); $sent = admin_booking_whatsapp($db, $bookingId, 'confirmed'); admin_finish('Booking confirmed. Reference: VCM-' . str_pad((string) $bookingId, 6, '0', STR_PAD_LEFT) . '.' . ($sent ? ' WhatsApp confirmation sent to the guest.' : '')); }
                 $kindQuery = $db->prepare('SELECT record_type FROM bookings WHERE id = ? AND status NOT IN (\'cancelled\', \'converted\')');
                 $kindQuery->execute([$id]); $recordType = $kindQuery->fetchColumn();
                 if ($recordType === false) admin_finish('This item was already updated. Refresh the page and try again.');
@@ -136,7 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $paymentLimit = settings_schema_ready($db) ? max(1, min(5, (int) setting($db, 'max_payment_steps', '5'))) : 5;
                 try { admin_record_payment($db, $id, (float) $amount, $method, $reference, $paymentNotes, $paymentLimit, $paymentMethods); }
                 catch (InvalidArgumentException | RuntimeException $error) { admin_finish($error->getMessage()); }
-                admin_finish('Payment saved.');
+                admin_finish('Payment saved.' . (admin_booking_whatsapp($db, $id, 'payment', (float) $amount) ? ' WhatsApp receipt sent to the guest.' : ''));
             }
             if ($action === 'send_email') {
                 $id = admin_id(); $query = $db->prepare('SELECT * FROM bookings WHERE id = ?'); $query->execute([$id]); $row = $query->fetch();
