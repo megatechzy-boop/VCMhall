@@ -10,6 +10,9 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
+  # Meta needs a 200 (not 206) for the app's Privacy Policy URL; see privacy-policy.php
+  RewriteRule ^privacy-policy$ privacy-policy.php [L]
+
   # (a) /index.html -> /
   RewriteRule ^index\.html$ / [R=301,L]
 
