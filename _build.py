@@ -26,7 +26,7 @@ FONT_LINK = (
     '  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500&family=Noto+Serif+Devanagari:wght@500;600&display=swap" rel="stylesheet" />'
 )
 
-OG_IMAGE = "https://venutaihall.com/assets/hero-hall.webp"
+OG_IMAGE = "https://venutaihall.com/assets/og-image.jpg"
 SITE_NAME = "Late Venutai Chavan Multipurpose Hall"
 
 SEO = {
@@ -106,6 +106,9 @@ def page(name, main, body_class="", extra_head=""):
   <meta property="og:description" content="{desc}" />
   <meta property="og:url" content="{canon}" />
   <meta property="og:image" content="{OG_IMAGE}" />
+  <meta property="og:image:type" content="image/jpeg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta property="og:image:alt" content="Main hall of Late Venutai Chavan Multipurpose Hall with chandeliers and banquet seating" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="{og_title}" />
