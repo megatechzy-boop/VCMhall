@@ -5,3 +5,4 @@ deployment:
     - /bin/cp *.html $DEPLOYPATH
     - /bin/cp styles.css script.js styles.min.css script.min.js $DEPLOYPATH
     - /bin/cp -R assets $DEPLOYPATH
+    - /bin/cp -R admin $DEPLOYPATH
