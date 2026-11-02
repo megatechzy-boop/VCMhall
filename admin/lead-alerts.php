@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
-$bookingStore = dirname(__DIR__) . '/booking-store.php';
-if (!is_file($bookingStore)) $bookingStore = dirname(__DIR__) . '/server-patch/booking-store.php';
+$bookingStore = dirname(__DIR__) . '/server-patch/booking-store.php';
+if (!is_file($bookingStore)) $bookingStore = dirname(__DIR__) . '/booking-store.php';
 require $bookingStore;
 require dirname(__DIR__) . '/server-patch/whatsapp-store.php';
 require dirname(__DIR__) . '/server-patch/leads-store.php';

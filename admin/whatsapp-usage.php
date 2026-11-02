@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-$bookingStore=dirname(__DIR__).'/booking-store.php';if(!is_file($bookingStore))$bookingStore=dirname(__DIR__).'/server-patch/booking-store.php';require $bookingStore;require __DIR__.'/dashboard-lib.php';
+$bookingStore=dirname(__DIR__).'/server-patch/booking-store.php';if(!is_file($bookingStore))$bookingStore=dirname(__DIR__).'/booking-store.php';require $bookingStore;require __DIR__.'/dashboard-lib.php';
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');header('Pragma: no-cache');
 require_once __DIR__ . '/session.php';admin_start_session();$config=booking_config();$db=booking_db();if(!admin_session_authenticated($db,(string)($config['admin_password_hash']??''))){header('Location: index.php');exit;}
 $activity=$db->query("SELECT created_at FROM booking_activity WHERE action='whatsapp_action'")->fetchAll(PDO::FETCH_COLUMN);$total=count($activity);$monthKey=date('Y-m');$month=count(array_filter($activity,static fn($date)=>str_starts_with((string)$date,$monthKey)));

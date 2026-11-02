@@ -1,5 +1,5 @@
 <?php
-$bookingStore=dirname(__DIR__).'/booking-store.php';if(!is_file($bookingStore))$bookingStore=dirname(__DIR__).'/server-patch/booking-store.php';require $bookingStore;require __DIR__.'/dashboard-lib.php';require __DIR__.'/enquiries-lib.php';require __DIR__.'/settings-lib.php';
+$bookingStore=dirname(__DIR__).'/server-patch/booking-store.php';if(!is_file($bookingStore))$bookingStore=dirname(__DIR__).'/booking-store.php';require $bookingStore;require __DIR__.'/dashboard-lib.php';require __DIR__.'/enquiries-lib.php';require __DIR__.'/settings-lib.php';
 header('Cache-Control: no-store');header('X-Frame-Options: DENY');header('X-Content-Type-Options: nosniff');header("Content-Security-Policy: default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; form-action 'self'; base-uri 'self'; frame-ancestors 'none'");
 require_once __DIR__ . '/session.php';admin_start_session();
 function sh(mixed $v):string{return htmlspecialchars((string)$v,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');}function settings_finish(string $m,string $tab):never{$routes=['venue'=>'contact-details','payments'=>'payments','email'=>'email','system'=>'page-display','popup'=>'website-popup'];$_SESSION['admin_notice']=$m;header('Location: '.($routes[$tab]??'contact-details').'.php');exit;}
