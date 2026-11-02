@@ -7,3 +7,4 @@ deployment:
     - /bin/cp -R assets $DEPLOYPATH
     - /bin/cp -R admin $DEPLOYPATH
     - /bin/cp -R server-patch $DEPLOYPATH
+    - /bin/cp booking.php $DEPLOYPATH
