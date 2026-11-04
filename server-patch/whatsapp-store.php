@@ -79,6 +79,7 @@ function wa_ensure_schema(PDO $db): void
             read_at TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP)");
         $db->exec('CREATE INDEX IF NOT EXISTS wa_messages_phone ON wa_messages(phone, id)');
+        $db->exec('CREATE TABLE IF NOT EXISTS wa_quick_replies (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, body TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP)');
         $db->exec("CREATE TABLE IF NOT EXISTS wa_templates (id INTEGER PRIMARY KEY AUTOINCREMENT, meta_id TEXT, name TEXT NOT NULL, language TEXT NOT NULL, category TEXT, status TEXT, reason TEXT, body TEXT, variable_count INTEGER, updated_at TEXT DEFAULT CURRENT_TIMESTAMP, UNIQUE(name, language))");
     } else {
         $db->exec("CREATE TABLE IF NOT EXISTS wa_messages (
@@ -99,6 +100,11 @@ function wa_ensure_schema(PDO $db): void
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             UNIQUE KEY wa_messages_wa_id (wa_id),
             KEY wa_messages_phone (phone, id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        $db->exec("CREATE TABLE IF NOT EXISTS wa_quick_replies (
+            id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(80) NOT NULL, body TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
         $db->exec("CREATE TABLE IF NOT EXISTS wa_templates (
             id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -351,4 +357,24 @@ function wa_template_status_event(PDO $db, array $value): void
     $reason = (string) ($value['reason'] ?? '');
     $db->prepare('UPDATE wa_templates SET status = ?, reason = ?, updated_at = ? WHERE name = ? AND language = ?')
         ->execute([mb_substr($event, 0, 30), $reason !== '' && $reason !== 'NONE' ? mb_substr($reason, 0, 500) : null, wa_now(), $name, $lang]);
+}
+
+/** Saved replies for the inbox; seeds a few starters the first time the list is empty. */
+function wa_quick_replies(PDO $db): array
+{
+    wa_ensure_schema($db);
+    $rows = $db->query('SELECT id, title, body FROM wa_quick_replies ORDER BY title')->fetchAll();
+    if ($rows || booking_setting($db, 'wa_quick_replies_seeded') === '1') return $rows;
+    $starters = [
+        ['Greeting', "Namaste {name} 🙏 Thank you for contacting Late Venutai Chavan Multipurpose Hall. How can we help you?"],
+        ['Event details', "Please share your event date 📅, type of event 🎉 and number of guests 👥, and we will check availability for you."],
+        ['Location', "📍 Late Venutai Chavan Multipurpose Hall, Yashwantrao Chavan Smarak, Sector 27A, Pradhikaran, Nigdi, Pune 411044.\nGoogle Maps: https://www.google.com/maps/search/?api=1&query=Late+Venutai+Chavan+Multipurpose+Hall"],
+        ['Call back', "Our team will call you shortly 📞 You can also reach us on 9359567494."],
+        ['Visit', "You are welcome to visit the venue 🏛️ We are open every day from 9 AM to 10 PM. Please let us know your preferred time."],
+        ['Thank you', "Thank you {name} 🙏 We look forward to hosting your event at Late Venutai Chavan Multipurpose Hall."],
+    ];
+    $insert = $db->prepare('INSERT INTO wa_quick_replies (title, body) VALUES (?, ?)');
+    foreach ($starters as [$title, $body]) $insert->execute([$title, $body]);
+    booking_setting_save($db, 'wa_quick_replies_seeded', '1', 'whatsapp');
+    return $db->query('SELECT id, title, body FROM wa_quick_replies ORDER BY title')->fetchAll();
 }

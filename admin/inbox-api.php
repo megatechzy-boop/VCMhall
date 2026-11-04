@@ -63,10 +63,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             wa_send($db, $wa, $phone, '', $by, true);
             inbox_json(200, ['ok' => true]);
         }
+        if ($action === 'template_send') {
+            $name = (string) ($_POST['name'] ?? '');
+            $lang = (string) ($_POST['language'] ?? 'en');
+            $template = wa_template_find($db, $name, $lang);
+            if (!$template || strtoupper((string) $template['status']) !== 'APPROVED') inbox_json(422, ['error' => 'Choose an approved template.']);
+            $params = array_map(static fn($v) => trim((string) $v), (array) ($_POST['params'] ?? []));
+            if (count(array_filter($params, static fn($v) => $v !== '')) < (int) $template['variable_count']) inbox_json(422, ['error' => 'Fill in every template field.']);
+            wa_send_template($db, $wa, $phone, $name, $lang, $params, $by);
+            inbox_json(200, ['ok' => true]);
+        }
+        if ($action === 'reply_save') {
+            $title = trim((string) ($_POST['title'] ?? ''));
+            $body = trim((string) ($_POST['body'] ?? ''));
+            if ($title === '' || mb_strlen($title) > 80 || $body === '' || mb_strlen($body) > 4096) inbox_json(422, ['error' => 'Give the reply a short name and some text.']);
+            wa_quick_replies($db);
+            $db->prepare('INSERT INTO wa_quick_replies (title, body) VALUES (?, ?)')->execute([$title, $body]);
+            inbox_json(200, ['replies' => wa_quick_replies($db)]);
+        }
+        if ($action === 'reply_delete') {
+            $db->prepare('DELETE FROM wa_quick_replies WHERE id = ?')->execute([(int) ($_POST['id'] ?? 0)]);
+            inbox_json(200, ['replies' => wa_quick_replies($db)]);
+        }
     } catch (InvalidArgumentException | RuntimeException $error) {
         inbox_json(422, ['error' => $error->getMessage()]);
     }
     inbox_json(400, ['error' => 'Unknown action.']);
+}
+
+if ($action === 'replies') {
+    $templates = $db->query("SELECT name, language, body, variable_count FROM wa_templates WHERE UPPER(status) = 'APPROVED' ORDER BY name")->fetchAll();
+    inbox_json(200, ['replies' => wa_quick_replies($db), 'templates' => array_map(static fn($t) => ['name' => $t['name'], 'language' => $t['language'], 'body' => (string) $t['body'], 'variables' => (int) $t['variable_count']], $templates)]);
 }
 
 if ($action === 'unread') {

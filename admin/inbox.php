@@ -83,12 +83,32 @@ $connected = $wa['token'] !== '' && $wa['phone_id'] !== '' && $wa['app_secret'] 
                 <div class="thread-messages" id="threadMessages"></div>
                 <footer class="composer">
                     <p class="composer-note" id="windowNote" hidden></p>
+                    <div class="composer-panel" id="emojiPanel" hidden role="dialog" aria-label="Emojis"><div class="emoji-grid" id="emojiGrid"></div></div>
+                    <div class="composer-panel" id="repliesPanel" hidden role="dialog" aria-label="Saved replies">
+                        <div class="panel-head"><strong>Saved replies</strong><small>Click to insert. {name} becomes the guest's name.</small></div>
+                        <ul class="reply-list" id="replyList" role="list"></ul>
+                        <form class="reply-save" id="replySave">
+                            <input id="replyTitle" maxlength="80" placeholder="Name for the message in the box, e.g. Rates" aria-label="Saved reply name">
+                            <button class="secondary-button" type="submit">Save current message</button>
+                        </form>
+                    </div>
+                    <div class="composer-panel" id="templatePanel" hidden role="dialog" aria-label="Send template">
+                        <div class="panel-head"><strong>Send an approved template</strong><small>Works any time, even after 24 hours.</small></div>
+                        <label>Template<select id="templateSelect"></select></label>
+                        <p class="template-preview" id="templatePreview"></p>
+                        <div class="template-fields" id="templateFields"></div>
+                        <button class="primary-button" type="button" id="templateSend">Send template</button>
+                    </div>
                     <form id="composer" class="composer-form">
+                        <div class="composer-tools">
+                            <button class="tool-button" type="button" id="emojiButton" aria-label="Emojis" aria-controls="emojiPanel" title="Emojis">😊</button>
+                            <button class="tool-button" type="button" id="repliesButton" aria-label="Saved replies" aria-controls="repliesPanel" title="Saved replies">⚡</button>
+                        </div>
                         <label class="sr-only" for="composerText">Message</label>
                         <textarea id="composerText" rows="1" maxlength="4096" placeholder="Type a reply…"></textarea>
                         <button class="primary-button" type="submit" id="sendButton">Send</button>
                     </form>
-                    <button class="secondary-button" type="button" id="templateButton" hidden>Send approved template</button>
+                    <button class="secondary-button" type="button" id="templateButton">📄 Send template</button>
                     <p class="composer-error" id="composerError" role="alert" hidden></p>
                 </footer>
             </div>

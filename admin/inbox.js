@@ -11,7 +11,7 @@
   const details = $('threadDetails'), records = $('recordList');
   const STATUS_TICKS = { sent: '✓', delivered: '✓✓', read: '✓✓', failed: '!' };
   const STATUS_LABELS = { pending: 'New enquiry', in_discussion: 'In discussion', quote_sent: 'Quote sent', follow_up: 'Reminder set', converted: 'Booking created', cancelled: 'Cancelled', confirmed: 'Confirmed' };
-  let active = '', lastId = 0, lastDay = '', searchTimer = 0, listTimer = 0, threadTimer = 0, busy = false;
+  let activeName = '', active = '', lastId = 0, lastDay = '', searchTimer = 0, listTimer = 0, threadTimer = 0, busy = false;
 
   const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt !== undefined) n.textContent = txt; return n; };
   const parse = (s) => new Date(String(s).replace(' ', 'T') + '+05:30');
@@ -143,14 +143,13 @@
   function renderWindow(data) {
     const open = data.window_open;
     form.hidden = !open;
-    templateButton.hidden = open;
     note.hidden = false;
     if (open) {
       const closes = parse(data.window_closes);
       note.textContent = 'You can reply freely until ' + closes.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) + '.';
       note.className = 'composer-note';
     } else {
-      note.textContent = 'More than 24 hours since the guest last wrote. WhatsApp only allows an approved template now; their reply re-opens the chat.';
+      note.textContent = 'More than 24 hours since the guest last wrote. WhatsApp only allows an approved template now (📄 Send template below); their reply re-opens the chat.';
       note.className = 'composer-note warn';
     }
   }
@@ -162,6 +161,7 @@
       const data = await api({ action: 'thread', phone, after: initial ? 0 : lastId });
       if (phone !== active) return;
       if (initial) {
+        activeName = data.name || '';
         $('threadName').textContent = data.name || pretty(phone);
         $('threadPhone').textContent = pretty(phone);
         $('threadAvatar').textContent = initials(data.name, phone);
@@ -177,7 +177,8 @@
   }
 
   function openThread(phone) {
-    active = phone; lastId = 0; lastDay = '';
+    active = phone; activeName = ''; lastId = 0; lastDay = '';
+    Object.values(panels).forEach((p) => { p.hidden = true; });
     box.replaceChildren();
     errorBox.hidden = true;
     placeholder.hidden = true; view.hidden = false; details.hidden = false;
@@ -205,13 +206,109 @@
   const autosize = () => { text.style.height = 'auto'; text.style.height = Math.min(text.scrollHeight, 160) + 'px'; };
   text.addEventListener('input', autosize);
 
-  templateButton.addEventListener('click', async () => {
-    if (!active || !window.confirm('Send the approved WhatsApp template to this guest?')) return;
-    templateButton.disabled = true; errorBox.hidden = true;
-    try { await api({}, { action: 'template', phone: active }); } catch (e) { showError(e.message); }
-    templateButton.disabled = false;
+  /* ---------- Emojis, saved replies and templates ---------- */
+  const EMOJIS = '🙏 😊 😀 😄 😍 🥰 😇 🤝 👍 👌 👏 🙌 💐 🎉 🎊 🥳 💍 💒 👰 🤵 🎂 🍰 🎈 🎁 🪔 🌸 🌺 🌹 ✨ ⭐ ❤️ 💖 🏛️ 🍽️ 🥘 ☕ 🎶 📸 💡 🚗 🅿️ ❄️ 🛏️ 📅 🗓️ ⏰ 🕘 📍 🗺️ 📞 📱 ✉️ 📄 💰 💳 ✅ ☑️ ❌ ⚠️ ℹ️ 👉 👆 👇 🔔 🆗 🙂 😃 😁 😉 🤗 🤔 😔 🙇 👋'.split(' ');
+  const panels = { emoji: $('emojiPanel'), replies: $('repliesPanel'), template: $('templatePanel') };
+  let replies = [], templates = [];
+  const firstName = () => (activeName || '').trim().split(/\s+/)[0] || 'ji';
+
+  function togglePanel(name) {
+    for (const [key, panel] of Object.entries(panels)) panel.hidden = key === name ? !panel.hidden : true;
+    if (name !== 'emoji' && !panels[name].hidden) loadReplies();
+  }
+  function insertText(value) {
+    const start = text.selectionStart ?? text.value.length, end = text.selectionEnd ?? text.value.length;
+    text.value = text.value.slice(0, start) + value + text.value.slice(end);
+    text.focus(); text.selectionStart = text.selectionEnd = start + value.length; autosize();
+  }
+
+  const grid = $('emojiGrid');
+  for (const emoji of EMOJIS) {
+    const b = el('button', 'emoji', emoji); b.type = 'button'; b.setAttribute('aria-label', 'Insert ' + emoji);
+    b.addEventListener('click', () => insertText(emoji));
+    grid.append(b);
+  }
+
+  async function loadReplies() {
+    try {
+      const data = await api({ action: 'replies' });
+      replies = data.replies; templates = data.templates;
+      renderReplies(); renderTemplateOptions();
+    } catch (e) { showError(e.message); }
+  }
+  function renderReplies() {
+    const ul = $('replyList'); ul.replaceChildren();
+    if (!replies.length) ul.append(el('li', 'muted', 'No saved replies yet. Type a message and save it below.'));
+    for (const r of replies) {
+      const li = el('li', 'reply-item');
+      const use = el('button', 'reply-use'); use.type = 'button';
+      use.append(el('strong', '', r.title), el('span', '', r.body));
+      use.addEventListener('click', () => { insertText(r.body.replaceAll('{name}', firstName())); panels.replies.hidden = true; });
+      const del = el('button', 'reply-delete', '×'); del.type = 'button'; del.title = 'Delete ' + r.title; del.setAttribute('aria-label', 'Delete saved reply ' + r.title);
+      del.addEventListener('click', async () => {
+        if (!window.confirm('Delete the saved reply "' + r.title + '"?')) return;
+        try { replies = (await api({}, { action: 'reply_delete', id: r.id })).replies; renderReplies(); } catch (e) { showError(e.message); }
+      });
+      li.append(use, del); ul.append(li);
+    }
+  }
+  $('replySave').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const title = $('replyTitle').value.trim(), body = text.value.trim();
+    if (!body) { showError('Type the message in the box first, then save it.'); return; }
+    if (!title) { $('replyTitle').focus(); return; }
+    try { replies = (await api({}, { action: 'reply_save', title, body })).replies; $('replyTitle').value = ''; renderReplies(); errorBox.hidden = true; } catch (e) { showError(e.message); }
+  });
+
+  const select = $('templateSelect'), fields = $('templateFields'), preview = $('templatePreview');
+  function renderTemplateOptions() {
+    const current = select.value;
+    select.replaceChildren();
+    if (!templates.length) { const o = el('option', '', 'No approved templates yet'); o.value = ''; select.append(o); }
+    for (const t of templates) { const o = el('option', '', `${t.name} (${t.language})`); o.value = `${t.name}|${t.language}`; select.append(o); }
+    if ([...select.options].some((o) => o.value === current)) select.value = current;
+    renderTemplateFields();
+  }
+  function selectedTemplate() { return templates.find((t) => `${t.name}|${t.language}` === select.value); }
+  function renderTemplateFields() {
+    const t = selectedTemplate();
+    fields.replaceChildren(); preview.textContent = t ? t.body : '';
+    for (let i = 1; i <= (t?.variables || 0); i += 1) {
+      const label = el('label', '', `{{${i}}}`);
+      const input = el('input'); input.name = 'param'; input.maxLength = 200; input.required = true;
+      if (i === 1) input.value = activeName || '';
+      input.addEventListener('input', updatePreview);
+      label.append(input); fields.append(label);
+    }
+    updatePreview();
+  }
+  function updatePreview() {
+    const t = selectedTemplate(); if (!t) return;
+    const values = [...fields.querySelectorAll('input')].map((i) => i.value.trim());
+    preview.textContent = t.body.replace(/\{\{(\d+)\}\}/g, (m, n) => values[n - 1] || m);
+  }
+  select.addEventListener('change', renderTemplateFields);
+  $('templateSend').addEventListener('click', async () => {
+    const t = selectedTemplate(); if (!t || !active) return;
+    const params = [...fields.querySelectorAll('input')].map((i) => i.value.trim());
+    if (params.some((v) => !v)) { showError('Fill in every template field.'); return; }
+    const button = $('templateSend'); button.disabled = true; errorBox.hidden = true;
+    try {
+      const body = new URLSearchParams({ action: 'template_send', phone: active, name: t.name, language: t.language, csrf });
+      params.forEach((v) => body.append('params[]', v));
+      const res = await fetch('inbox-api.php', { method: 'POST', credentials: 'same-origin', body });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Template not sent.');
+      panels.template.hidden = true;
+    } catch (e) { showError(e.message); }
+    button.disabled = false;
     loadThread(false); loadList();
   });
+
+  $('emojiButton').addEventListener('click', () => togglePanel('emoji'));
+  $('repliesButton').addEventListener('click', () => togglePanel('replies'));
+  templateButton.addEventListener('click', () => { togglePanel('template'); });
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') Object.values(panels).forEach((p) => { p.hidden = true; }); });
 
   search.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(loadList, 250); });
   $('threadBack').addEventListener('click', () => { shell.classList.remove('has-thread'); active = ''; history.replaceState(null, '', 'inbox.php'); });
