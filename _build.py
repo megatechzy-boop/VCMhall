@@ -1523,14 +1523,16 @@ privacy_body = """
             <h2>Storage and retention</h2>
             <p>Enquiry details are handled by the venue team for the purpose of following up. For current storage arrangements, contact the venue team.</p>
             <h2>Cookies and analytics</h2>
-            <p>This site stores a small preference in your browser if you close a site popup, so it does not reappear immediately. No advertising cookies are set by this site.</p>
+            <p>This site stores a small preference in your browser if you close a site popup, so it does not reappear immediately.</p>
+            <p>We use the Meta Pixel, an advertising tool from Meta Platforms (Facebook and Instagram). It sets cookies and tells Meta when a page is viewed and when an enquiry is sent, so we can measure and improve our ads on Facebook and Instagram. It does not send your name, phone number, email address or message to Meta. Meta's own privacy policy applies to the data it receives. You can control ad personalisation in your Facebook or Instagram ad settings, or block cookies in your browser.</p>
+            <p>If you reach this site from an ad or a link with campaign tags, we keep those tags in your browser for 30 days and save them with your enquiry, so we know which ad or campaign brought it.</p>
             <h2>Third-party links</h2>
             <p>The site links to Google Maps and WhatsApp. Those services have their own privacy policies, which apply when you use them.</p>
             <h2>Your choices</h2>
             <p>You can choose not to provide certain details, though that may limit how we can respond. To ask what information we hold about your enquiry, or to request a correction, contact the venue team on 9359567494.</p>
             <h2>Contact</h2>
             <p>Late Venutai Chavan Multipurpose Hall, Yashwantrao Chavan Smarak, Sector 27A, Pradhikaran, Nigdi, Pune – 411044. Phone: 9359567494.</p>
-            <p class="hint" style="margin-top:28px;color:var(--ink-3);font-size:14px">Last updated: September 2025.</p>
+            <p class="hint" style="margin-top:28px;color:var(--ink-3);font-size:14px">Last updated: November 2026.</p>
 """
 
 terms_body = """

@@ -77,7 +77,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($token !== '' && (admin_text_length($token) > 600 || preg_match('/\s/', $token))) throw new InvalidArgumentException('Paste the Page access token without spaces.');
             setting_save($db, 'meta_page_id', $pageId, 'meta');
             if ($token !== '') setting_save($db, 'meta_page_token_enc', booking_encrypt_resend_key($token, $config), 'meta');
-            lead_admin_finish('Meta Lead Ads settings saved. Secrets are encrypted and never displayed.');
+            $retryNote = '';
+            if ($token !== '' && meta_failed_leads($db) > 0) {
+                // A new token usually fixes leads that failed while the old one was missing or expired.
+                [$saved, $failed] = meta_retry_failed_leads($db, $config);
+                $retryNote = " Retried failed leads: $saved saved" . ($failed ? ", $failed still failed" : '') . '.';
+            }
+            lead_admin_finish('Meta Lead Ads settings saved. Secrets are encrypted and never displayed.' . $retryNote);
+        }
+        if ($action === 'retry_meta_leads') {
+            if (meta_failed_leads($db) === 0) lead_admin_finish('No failed Meta leads to retry.');
+            [$saved, $failed] = meta_retry_failed_leads($db, $config);
+            lead_admin_finish("Retried failed Meta leads: $saved saved as enquiries" . ($failed ? ", $failed still failed (see the reason below)" : '') . '.');
         }
         if ($action === 'test_alert') {
             $before = (int) $db->query('SELECT COALESCE(MAX(id), 0) FROM lead_notifications')->fetchColumn();
@@ -101,6 +112,7 @@ $log = $db->query('SELECT * FROM lead_notifications ORDER BY id DESC LIMIT 60')-
 $metaLeads = $db->query('SELECT leadgen_id, booking_id, status, error, created_at FROM meta_leads ORDER BY id DESC LIMIT 10')->fetchAll();
 $approved = $db->query("SELECT name, language, status FROM wa_templates ORDER BY name")->fetchAll();
 $metaTokenSaved = meta_page_token($db, $config) !== '';
+$metaFailed = meta_failed_leads($db);
 $waConnected = booking_whatsapp_token($db, $config) !== '' && ($s['whatsapp_phone_number_id'] ?? '') !== '';
 $webhookUrl = 'https://' . preg_replace('/[^A-Za-z0-9.:-]/', '', (string) ($_SERVER['HTTP_HOST'] ?? 'venutaihall.com')) . '/whatsapp-webhook.php';
 $templateValue = static fn(string $audience): string => (string) ($s["lead_{$audience}_template"] ?? LEAD_DEFAULT_TEMPLATES[$audience]['name']);
@@ -230,10 +242,14 @@ $templateValue = static fn(string $audience): string => (string) ($s["lead_{$aud
             <button class="primary-button" name="action" value="save_meta">Save Meta Lead Ads</button>
             <?php if ($metaLeads): ?>
             <h3 class="sub-heading">Latest Meta leads</h3>
+            <?php if ($metaFailed > 0): ?>
+            <p class="wa-help"><strong><?= $metaFailed ?> lead<?= $metaFailed === 1 ? '' : 's' ?> could not be fetched from Meta.</strong> Fix the reason shown (usually the Page token), then retry. Meta keeps lead details for 90 days.</p>
+            <button class="secondary-button" name="action" value="retry_meta_leads">Retry failed leads</button>
+            <?php endif; ?>
             <ul class="mini-log">
                 <?php foreach ($metaLeads as $ml): ?>
-                <li><span class="status-badge status-<?= $ml['status'] === 'saved' ? 'confirmed' : 'cancelled' ?>"><?= lh(ucfirst(str_replace('_', ' ', (string) $ml['status']))) ?></span>
-                    <span><?= lh(date('d M, h:i A', strtotime((string) $ml['created_at']))) ?><?= $ml['booking_id'] ? ' · ENQ-' . str_pad((string) $ml['booking_id'], 6, '0', STR_PAD_LEFT) : '' ?></span>
+                <li><span class="status-badge status-<?= $ml['status'] === 'saved' ? 'confirmed' : ($ml['status'] === 'received' || $ml['status'] === 'retrying' ? 'pending' : 'cancelled') ?>"><?= lh(ucfirst(str_replace('_', ' ', (string) $ml['status']))) ?></span>
+                    <span><?= lh(date('d M, h:i A', strtotime((string) $ml['created_at']))) ?><?= $ml['booking_id'] ? ' · ENQ-' . str_pad((string) $ml['booking_id'], 6, '0', STR_PAD_LEFT) : ' · Lead ID ' . lh($ml['leadgen_id']) ?></span>
                     <?php if ($ml['error']): ?><small><?= lh($ml['error']) ?></small><?php endif; ?></li>
                 <?php endforeach; ?>
             </ul>

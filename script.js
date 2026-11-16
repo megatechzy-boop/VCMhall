@@ -7,6 +7,44 @@
     year.textContent = new Date().getFullYear();
   });
 
+  // Meta Pixel. Paste the Pixel ID from Meta Events Manager here; while it is empty nothing loads.
+  const META_PIXEL_ID = '975209128561261';
+  const metaTrack = (...args) => { if (typeof window.fbq === 'function') window.fbq(...args); };
+  if (/^\d{10,20}$/.test(META_PIXEL_ID)) {
+    /* eslint-disable */
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    /* eslint-enable */
+    window.fbq('init', META_PIXEL_ID);
+    window.fbq('track', 'PageView');
+  }
+
+  // Ad attribution: keep the latest utm_* / fbclid from the landing URL for 30 days and send them with enquiries.
+  const ATTR_KEY = 'vcm_attribution';
+  const ATTR_FIELDS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid'];
+  const readAttribution = () => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(ATTR_KEY) || 'null');
+      if (saved && Date.now() - saved.at < 30 * 864e5) return saved.data || {};
+    } catch { /* storage blocked */ }
+    return {};
+  };
+  try {
+    const params = new URLSearchParams(location.search);
+    const fresh = {};
+    ATTR_FIELDS.forEach((key) => {
+      const value = (params.get(key) || '').trim().slice(0, 150);
+      if (value) fresh[key] = value;
+    });
+    if (Object.keys(fresh).length) localStorage.setItem(ATTR_KEY, JSON.stringify({ at: Date.now(), data: fresh }));
+  } catch { /* storage blocked */ }
+
+  const trackLead = (form, result) => {
+    const eventField = form.elements.event;
+    const props = { content_name: eventField && eventField.value ? eventField.value : 'Enquiry' };
+    // The event ID lets a future server-side (Conversions API) event for the same enquiry be de-duplicated.
+    metaTrack('track', 'Lead', props, result && result.reference ? { eventID: `enq-${result.reference}` } : undefined);
+  };
+
   const SPACE_INFO = {
     big: { name: 'Big Hall', cap: 'Up to 1200 guests', ideal: 'Weddings & large events', page: 'big-hall' },
     small: { name: 'Small Hall', cap: 'Up to 350 guests', ideal: 'Engagements & birthdays', page: 'small-hall' },
@@ -402,6 +440,8 @@
 
   const prepareBookingData = (form) => {
     const data = new FormData(form);
+    const attribution = readAttribution();
+    ATTR_FIELDS.forEach((key) => { if (attribution[key]) data.set(key, attribution[key]); });
     const hallSelect = qs('select[name="hall"]', form);
     if (!hallSelect) return data;
     const raw = hallSelect.value;
@@ -446,6 +486,7 @@
       let result = {};
       try { result = await response.json(); } catch { result = {}; }
       if (response.ok) {
+        trackLead(form, result);
         setStatus(status, result.message || 'Thank you — your enquiry has been received. Our team will contact you shortly.', 'is-ok');
         form.reset();
         qsa('input[type="date"]', form).forEach((input) => { input.min = todayStr; });
@@ -575,6 +616,7 @@
         let result = {};
         try { result = await response.json(); } catch { result = {}; }
         if (response.ok) {
+          trackLead(wizard, result);
           setStatus(status, '', null);
           if (success) {
             wizard.hidden = true;

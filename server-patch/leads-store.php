@@ -266,7 +266,12 @@ function meta_handle_leadgen(PDO $db, array $config, array $value): void
     $claim = $db->prepare("$ignore INTO meta_leads (leadgen_id, page_id, form_id, status) VALUES (?, ?, ?, 'received')");
     $claim->execute([$leadgenId, mb_substr($pageId, 0, 64), mb_substr((string) ($value['form_id'] ?? ''), 0, 64)]);
     if ($claim->rowCount() === 0) return; // Meta retries deliveries; each lead is handled once.
+    meta_process_lead($db, $config, $leadgenId);
+}
 
+/** Fetches one claimed lead from Meta, saves it as an enquiry and sends alerts. */
+function meta_process_lead(PDO $db, array $config, string $leadgenId): void
+{
     $update = $db->prepare('UPDATE meta_leads SET status = ?, error = ?, booking_id = ?, raw_json = COALESCE(?, raw_json) WHERE leadgen_id = ?');
     $token = meta_page_token($db, $config);
     if ($token === '') { $update->execute(['failed', 'Meta Page access token is not saved.', null, null, $leadgenId]); return; }
@@ -294,4 +299,43 @@ function meta_handle_leadgen(PDO $db, array $config, array $value): void
         $update->execute(['not_saved', mb_substr($error->getMessage(), 0, 500), null, $raw, $leadgenId]);
     }
     lead_notify($db, $config, $lead);
+}
+
+/** Failed leads that can still be retried (Meta keeps lead data for 90 days). */
+function meta_failed_leads(PDO $db): int
+{
+    lead_ensure_schema($db);
+    $count = $db->prepare("SELECT COUNT(*) FROM meta_leads WHERE status IN ('failed', 'not_saved') AND booking_id IS NULL AND created_at >= ?");
+    $count->execute([date('Y-m-d H:i:s', strtotime('-89 days'))]);
+    return (int) $count->fetchColumn();
+}
+
+/**
+ * Fetches failed leads from Meta again. Meta keeps lead data for 90 days, so older ones are skipped.
+ * Returns [saved, still failed].
+ */
+function meta_retry_failed_leads(PDO $db, array $config, int $limit = 25): array
+{
+    lead_ensure_schema($db);
+    $since = date('Y-m-d H:i:s', strtotime('-89 days'));
+    $find = $db->prepare("SELECT leadgen_id FROM meta_leads WHERE status IN ('failed', 'not_saved') AND booking_id IS NULL AND created_at >= ? ORDER BY id LIMIT " . max(1, min(100, $limit)));
+    $find->execute([$since]);
+    $saved = $failed = 0;
+    foreach ($find->fetchAll(PDO::FETCH_COLUMN) as $leadgenId) {
+        $leadgenId = (string) $leadgenId;
+        // Claim the row first so two admins clicking Retry never create the enquiry twice.
+        $claim = $db->prepare("UPDATE meta_leads SET status = 'retrying' WHERE leadgen_id = ? AND status IN ('failed', 'not_saved') AND booking_id IS NULL");
+        $claim->execute([$leadgenId]);
+        if ($claim->rowCount() === 0) continue;
+        try {
+            meta_process_lead($db, $config, $leadgenId);
+        } catch (Throwable $error) {
+            error_log('Meta lead retry: ' . $error->getMessage());
+            $db->prepare("UPDATE meta_leads SET status = 'failed', error = ? WHERE leadgen_id = ? AND status = 'retrying'")->execute([mb_substr($error->getMessage(), 0, 500), $leadgenId]);
+        }
+        $status = $db->prepare('SELECT status FROM meta_leads WHERE leadgen_id = ?');
+        $status->execute([$leadgenId]);
+        $status->fetchColumn() === 'saved' ? $saved++ : $failed++;
+    }
+    return [$saved, $failed];
 }

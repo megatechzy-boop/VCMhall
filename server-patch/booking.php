@@ -79,6 +79,21 @@ try {
         $stored_message = $row['message'] . "\n\n" . implode('. ', $extras) . '.';
     }
 
+    // Ad attribution sent by script.js from the landing URL (utm_* tags, fbclid).
+    $attr = [];
+    foreach (['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as $key) {
+        $value = trim(preg_replace('/[^\p{L}\p{N} ._+:\/|{}()-]+/u', '', (string) ($_POST[$key] ?? '')) ?? '');
+        if ($value !== '') $attr[$key] = mb_substr($value, 0, 150);
+    }
+    $fromMetaLink = trim((string) ($_POST['fbclid'] ?? '')) !== '';
+    $row['source'] = preg_match('/^(facebook|fb|instagram|ig|meta)\b/i', $attr['utm_source'] ?? '') ? 'meta-ads' : 'website';
+    if ($attr || $fromMetaLink) {
+        $parts = [];
+        foreach ($attr as $key => $value) $parts[] = substr($key, 4) . ': ' . $value;
+        if ($fromMetaLink && !$attr) $parts[] = 'came from a Facebook/Instagram link';
+        $stored_message = trim($stored_message . "\n\nAd tracking: " . implode(' | ', $parts));
+    }
+
     $db->beginTransaction();
     try {
         $check = $db->prepare('SELECT 1 FROM bookings WHERE booked_date = ? AND hall = ? LIMIT 1');
@@ -87,11 +102,17 @@ try {
             $db->rollBack();
             booking_response(409, ['error' => 'This date is already booked. Please choose another date.']);
         }
-        $insert = $db->prepare('INSERT INTO bookings (name, phone, email, event_type, hall, event_date, guests, message) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-        $insert->execute([$row['name'], $row['phone'], $row['email'], $row['event_type'], $row['hall'], $row['event_date'], $row['guests'], $stored_message]);
+        $values = [$row['name'], $row['phone'], $row['email'], $row['event_type'], $row['hall'], $row['event_date'], $row['guests'], $stored_message];
+        try {
+            $db->prepare('INSERT INTO bookings (name, phone, email, event_type, hall, event_date, guests, message, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')->execute([...$values, $row['source']]);
+        } catch (PDOException $error) {
+            // Older databases without the source column still accept the enquiry.
+            error_log('Enquiry source not saved: ' . $error->getMessage());
+            $db->prepare('INSERT INTO bookings (name, phone, email, event_type, hall, event_date, guests, message) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')->execute($values);
+        }
         $id = (int) $db->lastInsertId();
-        $activity = $db->prepare("INSERT INTO booking_activity (booking_id, action, details) VALUES (?, 'enquiry_created', 'Website enquiry received')");
-        $activity->execute([$id]);
+        $activity = $db->prepare("INSERT INTO booking_activity (booking_id, action, details) VALUES (?, 'enquiry_created', ?)");
+        $activity->execute([$id, $row['source'] === 'meta-ads' ? 'Website enquiry received from a Meta ad' : 'Website enquiry received']);
         $db->commit();
         rate_record($db, 'enquiry_ip', $clientIp);
     } catch (Throwable $error) {
@@ -108,7 +129,7 @@ try {
     // Guest and team alerts run after the visitor already has the response.
     lead_finish_response();
     try {
-        lead_notify($db, booking_config(), ['id' => $id, 'source' => 'website', 'message' => $stored_message] + $row);
+        lead_notify($db, booking_config(), ['id' => $id, 'message' => $stored_message] + $row);
     } catch (Throwable $error) {
         error_log('Lead alerts error: ' . $error->getMessage());
     }

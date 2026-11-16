@@ -427,3 +427,25 @@ Verification:
 - Templates: sync, invalid body rejected with message and draft kept, create, use-for, resubmit, delete, status webhook → Approved.
 - 1440px and 390px screenshots of Lead alerts and WhatsApp templates: no overflow, no console errors.
 - Not run against real Meta (no credentials). Email not delivered locally (no mail server); logged as failed as expected.
+
+---
+Date: 2026-11-16
+Group: Meta ads readiness — failed-lead retry, Meta Pixel, ad attribution
+Branch: main (not committed yet)
+Status: verified locally; Pixel ID 975209128561261 ("Meta Ads" dataset, the one linked to ad account "venutai hall") set; waiting for the owner's go.
+
+What changed:
+- server-patch/leads-store.php: lead processing split into meta_process_lead(); new meta_failed_leads() and meta_retry_failed_leads() (claims each row first, so no duplicates; skips leads older than 89 days because Meta keeps them 90).
+- admin/lead-alerts.php: "Retry failed leads" button under Latest Meta leads; saving a new Page token retries failed leads automatically; failed rows show the Lead ID.
+- script.js: Meta Pixel loader (META_PIXEL_ID constant, empty = off), Lead event on every successful enquiry with eventID enq-<reference>; utm_* and fbclid from the landing URL kept 30 days in localStorage and sent with enquiries.
+- server-patch/booking.php: saves source meta-ads when utm_source is facebook/fb/instagram/ig/meta, otherwise website; adds an "Ad tracking:" line to the message; falls back to the old insert if the source column is missing.
+- Privacy policy (via _build.py and privacy-policy.html): Meta Pixel and campaign-tag paragraphs; last updated November 2026.
+- script.min.js rebuilt; only the ?v= hash changed in the HTML pages. A full _build.py run also changes og-image .jpg -> .webp and every sitemap date, so those generated changes were NOT kept.
+- Guest-count range bug in meta_map_lead left as is (owner: guest count not needed).
+
+Verification (local PHP 8.3 + SQLite + mock Graph API):
+- Website: plain -> website; utm_source=facebook -> meta-ads + Ad tracking line; fbclid only -> website + note; hostile utm values stripped.
+- Meta leads: no token -> failed; duplicate webhook ignored; bad token retry -> still failed; good token retry -> saved once; repeat retry -> no duplicate; >90-day lead skipped.
+- Admin: button shows only with retryable failures; retry redirects with summary; bad CSRF 403.
+- Browser with a dummy Pixel ID: fbevents.js loaded, Lead fired with eventID enq-7, attribution stored. Real Meta delivery not tested (needs the real Pixel ID).
+- php -l, node --check, _check.py clean; token scan 0.
