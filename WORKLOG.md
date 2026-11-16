@@ -449,3 +449,25 @@ Verification (local PHP 8.3 + SQLite + mock Graph API):
 - Admin: button shows only with retryable failures; retry redirects with summary; bad CSRF 403.
 - Browser with a dummy Pixel ID: fbevents.js loaded, Lead fired with eventID enq-7, attribution stored. Real Meta delivery not tested (needs the real Pixel ID).
 - php -l, node --check, _check.py clean; token scan 0.
+
+---
+Date: 2026-11-16
+Group: Security cleanup before client delivery
+Branch: main
+Status: verified locally; pushed. Server steps listed below are for the owner.
+
+What changed:
+- Removed admin-old/ (old admin login on the same accounts and database, with no limit on wrong passwords), deploy-test.html and dummy.html.
+- server-patch/.htaccess blocks browser access (same syntax as admin/sessions/.htaccess); the reminder cron uses the php command, not a URL.
+- assets/index.html (blank, noindex) hides the assets file list without risking an Options error.
+- Admin: signed-in sessions end after 8 hours without any request, with a notice on the sign-in page.
+- Inbox media: the WhatsApp token is only sent to Meta media hosts (fbsbx.com, fbcdn.net, facebook.com, whatsapp.net).
+- About page: removed the old "Designed & developed by" credit; every footer already says "Website by Mega Techzy".
+- htaccess-security-snippet.txt: public-site headers (HSTS, nosniff, X-Frame-Options, Referrer-Policy, Permissions-Policy, hide X-Powered-By) for the owner to paste into the server .htaccess.
+- DEPLOY.md: what .cpanel.yml really copies, the files to delete by hand, the headers snippet.
+
+Security review (no change needed): SQL uses placeholders throughout; admin output is escaped and admin JS uses textContent under a strict CSP; every POST checks CSRF; login uses password_verify, session regeneration, Secure/HttpOnly/SameSite cookie and REMOTE_ADDR rate limits; popup uploads check the real file type with random names; webhook signature uses hash_equals; secrets in git history: none.
+
+Owner steps on the server: delete public_html/admin-old, deploy-test.html, dummy.html; paste the headers snippet; set expose_php Off; change the cPanel, MySQL (then booking-config.php) and admin passwords, and the Meta/WhatsApp tokens if the previous developer had them.
+
+Verification: php -l clean; local login 200; 9-hour idle session -> 302 to sign-in with notice; media host allowlist blocks look-alike hosts; _check.py clean; token scan 0.

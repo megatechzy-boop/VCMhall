@@ -51,4 +51,15 @@ function admin_start_session(): void
         http_response_code(503);
         exit('The admin panel cannot start a secure session. Please contact the person who manages the website.');
     }
+
+    // Sign out a signed-in session after 8 hours without any admin request (an open inbox tab keeps it alive).
+    $now = time();
+    $signedIn = !empty($_SESSION['admin_user_id']) || !empty($_SESSION['password_hash']);
+    if ($signedIn && $now - (int) ($_SESSION['last_activity'] ?? $now) > ADMIN_IDLE_TIMEOUT) {
+        $_SESSION = ['admin_notice' => 'You were signed out after 8 hours without activity. Please sign in again.'];
+        session_regenerate_id(true);
+    }
+    $_SESSION['last_activity'] = $now;
 }
+
+const ADMIN_IDLE_TIMEOUT = 8 * 3600;

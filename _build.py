@@ -1245,7 +1245,6 @@ about_main = f"""
         </div>
       </section>
 
-      <p class="about-credit shell reveal" style="text-align:center;font-size:13px;color:var(--ink-3);margin-top:8px;margin-bottom:0">Designed &amp; developed by <a href="https://omkardile.is-a.dev/" rel="author" style="color:var(--brass-deep);font-weight:600">Omkar Kardile</a></p>
 
       {cta_band("Let’s make your <em>next event special</em>")}
 """

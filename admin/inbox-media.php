@@ -24,7 +24,10 @@ try {
     [$code, $meta] = wa_api($wa, 'GET', rawurlencode((string) $row['media_id']));
     $url = (string) ($meta['url'] ?? '');
     $mime = strtolower(trim(explode(';', (string) ($meta['mime_type'] ?? ''))[0]));
-    if ($code !== 200 || !str_starts_with($url, 'https://') || !isset(INBOX_MEDIA_TYPES[$mime]) || (int) ($meta['file_size'] ?? 0) > 25 * 1024 * 1024) { http_response_code(404); exit; }
+    // The access token is only ever sent to Meta's own media hosts.
+    $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+    $metaHost = (bool) preg_match('/(^|\.)(fbsbx\.com|fbcdn\.net|facebook\.com|whatsapp\.net)$/', $host);
+    if ($code !== 200 || !str_starts_with($url, 'https://') || !$metaHost ||!isset(INBOX_MEDIA_TYPES[$mime]) || (int) ($meta['file_size'] ?? 0) > 25 * 1024 * 1024) { http_response_code(404); exit; }
 
     $ch = curl_init($url);
     curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 40, CURLOPT_FOLLOWLOCATION => false, CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $wa['token']]]);

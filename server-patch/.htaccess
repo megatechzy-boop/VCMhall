@@ -1,0 +1,7 @@
+# Backend code only: PHP includes these files from disk; nothing here is meant to be opened in a browser.
+# Same syntax as admin/sessions/.htaccess, which already returns 403 on the live server.
+Require all denied
+
+<IfModule mod_access_compat.c>
+    Deny from all
+</IfModule>

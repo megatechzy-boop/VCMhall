@@ -1,0 +1,24 @@
+# Security headers for the public website — paste this block at the END of the server's
+# public_html/.htaccess (cPanel File Manager). Back up .htaccess first.
+# The admin pages already send their own stricter headers from PHP; this covers the public pages.
+#
+# What each line does:
+#   Strict-Transport-Security  browsers always use https for venutaihall.com (1 year). Subdomains are not included.
+#   X-Content-Type-Options     browsers do not guess file types (blocks some upload/script tricks).
+#   X-Frame-Options            other sites cannot show these pages inside a frame (clickjacking).
+#   Referrer-Policy            other sites only see "venutaihall.com", not full page addresses.
+#   Permissions-Policy         pages cannot ask for camera, microphone or location.
+#   X-Powered-By (unset)       hides the PHP version. Also set expose_php = Off in cPanel -> MultiPHP INI Editor.
+#
+# After pasting: open https://venutaihall.com in a private window and check the site still loads,
+# then check headers at https://securityheaders.com/?q=venutaihall.com
+
+<IfModule mod_headers.c>
+  Header always set Strict-Transport-Security "max-age=31536000"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  Header always unset X-Powered-By
+  Header unset X-Powered-By
+</IfModule>
