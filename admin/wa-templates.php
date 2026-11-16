@@ -62,7 +62,7 @@ function tpl_sync(PDO $db, array $wa, string $wabaId): int
 try {
     $config = booking_config();
     $db = booking_db();
-    if (!admin_session_authenticated($db, (string) ($config['admin_password_hash'] ?? ''))) { header('Location: index.php'); exit; }
+    if (!admin_session_authenticated($db, (string) ($config['admin_password_hash'] ?? ''))) { header('Location: index.php'); exit; } admin_require('wa_templates');
     lead_ensure_schema($db);
 } catch (Throwable $error) {
     error_log('Templates setup: ' . $error->getMessage());

@@ -5,7 +5,7 @@ header('Cache-Control: no-store');header('X-Frame-Options: DENY');header('X-Cont
 require_once __DIR__ . '/session.php';admin_start_session();
 function wh(mixed $v):string{return htmlspecialchars((string)$v,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');}
 try{$config=booking_config();$db=booking_db();$hash=(string)($config['admin_password_hash']??'');}catch(Throwable){http_response_code(503);exit('The admin panel is still being set up.');}
-if(!admin_session_authenticated($db,$hash)){header('Location: index.php');exit;}
+if(!admin_session_authenticated($db,$hash)){header('Location: index.php');exit;} admin_require('setup');
 $_SESSION['csrf']??=bin2hex(random_bytes(32));$notice=(string)($_SESSION['admin_notice']??'');unset($_SESSION['admin_notice']);
 if($_SERVER['REQUEST_METHOD']==='POST'){
     if(!hash_equals((string)$_SESSION['csrf'],(string)($_POST['csrf']??''))){http_response_code(403);exit('Your session expired.');}

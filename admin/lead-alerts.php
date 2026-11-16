@@ -22,7 +22,7 @@ function lead_admin_finish(string $message): never { $_SESSION['admin_notice'] =
 try {
     $config = booking_config();
     $db = booking_db();
-    if (!admin_session_authenticated($db, (string) ($config['admin_password_hash'] ?? ''))) { header('Location: index.php'); exit; }
+    if (!admin_session_authenticated($db, (string) ($config['admin_password_hash'] ?? ''))) { header('Location: index.php'); exit; } admin_require('lead_alerts');
     lead_ensure_schema($db);
 } catch (Throwable $error) {
     error_log('Lead alerts setup: ' . $error->getMessage());
@@ -70,6 +70,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $db->prepare('DELETE FROM lead_recipients WHERE id = ?')->execute([(int) ($_POST['id'] ?? 0)]);
             lead_admin_finish('Team member removed.');
         }
+        // Meta Lead Ads connection (Page token) is technical setup: Super Admin only.
+        if (in_array($action, ['save_meta', 'retry_meta_leads'], true)) admin_require('setup');
         if ($action === 'save_meta') {
             $pageId = trim((string) ($_POST['meta_page_id'] ?? ''));
             $token = trim((string) ($_POST['meta_page_token'] ?? ''));
@@ -227,6 +229,7 @@ $templateValue = static fn(string $audience): string => (string) ($s["lead_{$aud
     </section>
 
     <section class="settings-grid alerts-grid">
+        <?php if (admin_can('setup')): ?>
         <form class="settings-card-form" method="post">
             <input type="hidden" name="csrf" value="<?= lh($_SESSION['csrf']) ?>">
             <div class="settings-heading">
@@ -255,6 +258,7 @@ $templateValue = static fn(string $audience): string => (string) ($s["lead_{$aud
             </ul>
             <?php endif; ?>
         </form>
+        <?php endif; ?>
 
         <section class="settings-card-form">
             <div class="settings-heading"><div><h2>Alert log</h2><p>Last 60 messages sent for leads.</p></div></div>

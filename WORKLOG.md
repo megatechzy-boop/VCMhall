@@ -471,3 +471,30 @@ Security review (no change needed): SQL uses placeholders throughout; admin outp
 Owner steps on the server: delete public_html/admin-old, deploy-test.html, dummy.html; paste the headers snippet; set expose_php Off; change the cPanel, MySQL (then booking-config.php) and admin passwords, and the Meta/WhatsApp tokens if the previous developer had them.
 
 Verification: php -l clean; local login 200; 9-hour idle session -> 302 to sign-in with notice; media host allowlist blocks look-alike hosts; _check.py clean; token scan 0.
+
+---
+Date: 2026-11-16
+Group: Admin team roles (Super Admin, Owner, Manager, Sales)
+Branch: main
+Status: verified locally; not pushed yet.
+
+What changed:
+- admin/roles.php: 4 roles and a permission map checked on the server (admin_can / admin_require). Old role value "admin" maps to Super Admin so nobody loses access; unknown values get the least access (Sales).
+- Super Admin: technical setup only they can reach (WhatsApp setup and usage, Email setup, Page display, Meta Lead Ads token and retry) plus everything else; manages every login.
+- Owner: all business work, payments settings, WhatsApp templates, lead alerts; manages Manager and Sales logins only.
+- Manager: enquiries, bookings (add/cancel/block dates/amounts), payments, exports, chats, lead alerts, contact details and pop-up.
+- Sales: enquiries, follow-ups, notes, chats; converts enquiries to bookings, adds/cancels bookings, blocks dates, sets amounts and records payments (owner's request, same day); no export, lead alerts, settings or team.
+- admin/team.php: "Team & roles" (Super Admin, Owner) to add logins, change role, switch a login off, reset a password; everyone gets "My login" to change their own password (current password required, minimum 10 characters).
+- admin_users table is created or upgraded automatically (display_name, last_login_at, created_at; role widened to VARCHAR). The role is re-read on every request, so a role change or switch-off applies on the next click.
+- The shared setup password from booking-config.php signs in as Super Admin only while no team login exists; the first login must be a Super Admin, and creating it ends the setup session.
+- Safety: nobody can change their own role or switch off their own login; an Owner cannot touch a Super Admin; at least one active Super Admin must remain.
+- Activity history adds "— by Name (Role)" to every admin change.
+- Sidebar shows only the pages a role may open, plus the role under the user's name.
+
+Verification (local PHP 8.3 + SQLite, all four roles signed in):
+- Page access matrix matches the role table (blocked pages return 403, including exports and settings).
+- Sales (after the change above): payment saved, enquiry converted, date blocked, booking cancelled, history shows "by Sita Sales (Sales / Front desk)"; export, lead alerts, contact settings and team add_user refused (403).
+- Manager: payment saved; payments settings and Meta setup refused. Owner: cannot create an Owner or reset a Super Admin password; can promote/switch off Sales.
+- Role change visible on the next request; switched-off user signed out on next click and cannot sign in.
+- Activity shows "by Ram Manager (Manager)"; php -l on all admin PHP and node --check clean; no PHP warnings in the server log.
+- Visual screenshot of the Team page not taken (browser pane was not drawing).

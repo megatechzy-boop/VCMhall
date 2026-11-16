@@ -33,7 +33,7 @@ try {
 $_SESSION['csrf'] ??= bin2hex(random_bytes(32));
 $loggedIn = admin_session_authenticated($db, $passwordHash);
 $usersTableReady = false;
-try { $db->query('SELECT 1 FROM admin_users LIMIT 1'); $usersTableReady = true; } catch (Throwable) { }
+try { admin_users_ensure($db); $usersTableReady = true; } catch (Throwable $error) { error_log('Admin users table: ' . $error->getMessage()); }
 $notice = (string) ($_SESSION['admin_notice'] ?? '');
 unset($_SESSION['admin_notice']);
 $schemaReady = false;
@@ -54,14 +54,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $password = (string) ($_POST['password'] ?? '');
             $user = null;
             if ($usersTableReady && $username !== '') {
-                $userQuery = $db->prepare('SELECT id, username, role, password_hash FROM admin_users WHERE active = 1 AND (username = ? OR email = ?) LIMIT 1');
+                $userQuery = $db->prepare('SELECT id, username, display_name, role, password_hash FROM admin_users WHERE active = 1 AND (username = ? OR email = ?) LIMIT 1');
                 $userQuery->execute([$username, $username]);
                 $user = $userQuery->fetch() ?: null;
             }
             $validUser = $user && password_verify($password, (string) $user['password_hash']);
-            $validLegacy = !$usersTableReady && password_verify($password, $passwordHash);
+            // The shared setup password only works while no team login exists yet; it signs in as Super Admin.
+            $validLegacy = !$user && admin_active_user_count($db) === 0 && password_verify($password, $passwordHash);
             if ($validUser || $validLegacy) {
-                session_regenerate_id(true); $_SESSION['password_hash'] = $passwordHash; $_SESSION['admin_user_id'] = $user ? (int) $user['id'] : 0; $_SESSION['admin_role'] = $user['role'] ?? 'admin'; $_SESSION['admin_username'] = $user['username'] ?? 'admin'; rate_clear($db, 'login_user', $username); $loggedIn = true;
+                session_regenerate_id(true); $_SESSION['password_hash'] = $passwordHash; $_SESSION['admin_user_id'] = $user ? (int) $user['id'] : 0; $_SESSION['admin_role'] = $user ? admin_normalize_role((string) $user['role']) : 'super_admin'; $_SESSION['admin_username'] = $user['username'] ?? 'setup'; $_SESSION['admin_display_name'] = $user ? (string) ($user['display_name'] ?? '') : 'Setup login'; $_SESSION['last_activity'] = time();
+                if ($user) { try { $db->prepare('UPDATE admin_users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?')->execute([(int) $user['id']]); } catch (Throwable) { } } rate_clear($db, 'login_user', $username); $loggedIn = true;
             } else {
                 rate_record($db, 'login_ip', $loginIp);
                 if ($username !== '') rate_record($db, 'login_user', $username);
@@ -73,6 +75,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($loggedIn) {
         if (!admin_schema_ready($db)) admin_finish('Admin setup is incomplete. Please contact the person who manages the website before making changes.');
         $sources = ['website', 'meta-ads', 'whatsapp', 'instagram', 'phone', 'walk-in', 'other'];
+        // Role check for every dashboard action (notes, reminders and emails are open to every role).
+        $actionPermission = ['add_booking' => 'booking.manage', 'block' => 'booking.manage', 'save_details' => 'booking.manage', 'confirm' => 'enquiry.convert', 'add_payment' => 'payment.record'];
+        if (isset($actionPermission[$action]) && !admin_can($actionPermission[$action])) admin_finish('Your role (' . admin_role_label() . ') does not allow this action.');
+        if ($action === 'cancel' && !admin_can('booking.manage')) {
+            // Sales may close an open enquiry, but not cancel a booking or free a blocked date.
+            $kind = $db->prepare('SELECT record_type FROM bookings WHERE id = ?');
+            $kind->execute([admin_id()]);
+            if ($kind->fetchColumn() !== 'enquiry') admin_finish('Your role (' . admin_role_label() . ') cannot cancel bookings or change blocked dates.');
+        }
         try {
             if ($action === 'block') {
                 $date = trim((string) ($_POST['date'] ?? ''));
@@ -179,7 +190,7 @@ $dashboardData = ['rows' => [], 'payments' => [], 'activity' => [], 'today' => b
 <main class="login-page"><section class="login-card"><div class="brand-mark">VC</div><p class="eyebrow">VENUE ADMIN</p><h1>Welcome back</h1><p>Sign in to manage venue enquiries and bookings.</p><?php if ($notice !== ''): ?><p class="notice" role="status"><?= h($notice) ?></p><?php endif; ?><form method="post" class="stack-form"><label>Username or email<input type="text" name="username" autocomplete="username" required /></label><label>Password<input type="password" name="password" autocomplete="current-password" required /></label><input type="hidden" name="csrf" value="<?= h($_SESSION['csrf']) ?>" /><button class="primary-button" name="action" value="login">Sign in</button></form></section></main>
 <?php else: ?>
 <div class="dashboard-layout"><?php $activeAdminSection = 'dashboard'; require __DIR__ . '/sidebar.php'; ?>
-<main class="dashboard-main"><header class="topbar"><button class="icon-button menu-toggle" id="menuToggle" type="button" aria-label="Open menu" aria-controls="sidebar" aria-expanded="false">☰</button><div class="page-title"><p class="eyebrow">VENUE OVERVIEW</p><h1>Venue Overview</h1><p>New enquiries, upcoming bookings and hall dates at a glance.</p></div><div class="header-actions"><button class="secondary-button" type="button" data-open-block>Mark Date Unavailable</button><button class="primary-button" type="button" data-open-booking>＋ Add Booking</button></div></header>
+<main class="dashboard-main"><header class="topbar"><button class="icon-button menu-toggle" id="menuToggle" type="button" aria-label="Open menu" aria-controls="sidebar" aria-expanded="false">☰</button><div class="page-title"><p class="eyebrow">VENUE OVERVIEW</p><h1>Venue Overview</h1><p>New enquiries, upcoming bookings and hall dates at a glance.</p></div><div class="header-actions"><?php if (admin_can('booking.manage')): ?><button class="secondary-button" type="button" data-open-block>Mark Date Unavailable</button><?php endif; ?><?php if (admin_can('booking.manage')): ?><button class="primary-button" type="button" data-open-booking>＋ Add Booking</button><?php endif; ?></div></header>
 <?php if ($notice !== ''): ?><p class="notice" role="status"><?= h($notice) ?></p><?php endif; ?>
 <?php if (!$schemaReady): ?><section class="migration-card"><h2>Admin setup needs attention</h2><p>The admin panel needs a one-time setup update before it can manage enquiries and bookings. Please contact the person who maintains the website. Existing records will be kept.</p></section>
 <?php else: ?>

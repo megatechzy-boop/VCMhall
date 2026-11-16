@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/roles.php';
+
 const ADMIN_HALLS = ['small', 'big'];
 
 function admin_text_length(string $value): int
@@ -18,16 +20,30 @@ function admin_session_authenticated(PDO $db, string $legacyPasswordHash): bool
     $userId = (int) ($_SESSION['admin_user_id'] ?? 0);
     if ($userId > 0) {
         try {
-            $query = $db->prepare('SELECT 1 FROM admin_users WHERE id = ? AND active = 1 LIMIT 1');
+            // Re-read the role on every request, so a role change or deactivation applies at once.
+            $query = $db->prepare('SELECT username, display_name, role FROM admin_users WHERE id = ? AND active = 1 LIMIT 1');
             $query->execute([$userId]);
-            return $query->fetchColumn() !== false;
+            $user = $query->fetch(PDO::FETCH_ASSOC);
+            if (!$user) return false;
+            $_SESSION['admin_role'] = admin_normalize_role((string) $user['role']);
+            $_SESSION['admin_username'] = (string) $user['username'];
+            $_SESSION['admin_display_name'] = (string) ($user['display_name'] ?? '');
+            return true;
         } catch (Throwable) {
             return false;
         }
     }
 
-    return $legacyPasswordHash !== ''
-        && hash_equals($legacyPasswordHash, (string) ($_SESSION['password_hash'] ?? ''));
+    // The shared setup password from booking-config.php only works until the first team login exists.
+    $legacy = $legacyPasswordHash !== ''
+        && hash_equals($legacyPasswordHash, (string) ($_SESSION['password_hash'] ?? ''))
+        && admin_active_user_count($db) === 0;
+    if ($legacy) {
+        $_SESSION['admin_role'] = 'super_admin';
+        $_SESSION['admin_username'] = 'setup';
+        $_SESSION['admin_display_name'] = 'Setup login';
+    }
+    return $legacy;
 }
 
 function admin_schema_ready(PDO $db): bool
@@ -44,6 +60,11 @@ function admin_schema_ready(PDO $db): bool
 
 function admin_activity(PDO $db, int $bookingId, string $action, string $details = ''): void
 {
+    // Every admin change names who made it, e.g. "Payment recorded — by Ramesh (Manager)".
+    if (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['admin_role'])) {
+        $suffix = ' — by ' . admin_actor_label();
+        $details = admin_text_cut($details, 500 - admin_text_length($suffix)) . $suffix;
+    }
     $query = $db->prepare('INSERT INTO booking_activity (booking_id, action, details) VALUES (?, ?, ?)');
     $query->execute([$bookingId, admin_text_cut($action, 40), admin_text_cut($details, 500)]);
 }

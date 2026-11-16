@@ -7,15 +7,17 @@ $sidebarPrefix = $sidebarPrefix ?? '';
 $_SESSION['csrf'] ??= bin2hex(random_bytes(32));
 $sidebarCsrf = (string) $_SESSION['csrf'];
 $settingsLinks = [
-    'venue' => ['Contact details', 'contact-details.php'],
-    'payments' => ['Payments', 'payments.php'],
-    'whatsapp' => ['WhatsApp setup', '../whatsapp.php'],
-    'alerts' => ['Lead alerts', '../lead-alerts.php'],
-    'watemplates' => ['WhatsApp templates', '../wa-templates.php'],
-    'email' => ['Email setup', 'email.php'],
-    'system' => ['Page display', 'page-display.php'],
-    'popup' => ['Website pop-up', 'website-popup.php'],
+    'venue' => ['Contact details', 'contact-details.php', 'settings.business'],
+    'payments' => ['Payments', 'payments.php', 'settings.payments'],
+    'whatsapp' => ['WhatsApp setup', '../whatsapp.php', 'setup'],
+    'alerts' => ['Lead alerts', '../lead-alerts.php', 'lead_alerts'],
+    'watemplates' => ['WhatsApp templates', '../wa-templates.php', 'wa_templates'],
+    'email' => ['Email setup', 'email.php', 'setup'],
+    'system' => ['Page display', 'page-display.php', 'setup'],
+    'popup' => ['Website pop-up', 'website-popup.php', 'settings.business'],
 ];
+// Each role only sees the settings its permissions allow; the pages check again on the server.
+$settingsLinks = array_filter($settingsLinks, static fn(array $link): bool => admin_can($link[2]));
 $sidebarUnread = 0;
 if (isset($db) && $db instanceof PDO) {
     require_once dirname(__DIR__) . '/server-patch/whatsapp-store.php';
@@ -27,6 +29,7 @@ $sidebarIcons = [
     'enquiries' => '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
     'bookings' => '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M9 15l2 2 4-4"/>',
     'settings' => '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/>',
+    'team' => '<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17.5" cy="9" r="2.5"/><path d="M15.5 14.2A5 5 0 0 1 21 19"/>',
     'logout' => '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
 ];
 $sidebarIcon = static fn(string $name): string => '<svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' . $sidebarIcons[$name] . '</svg>';
@@ -35,6 +38,7 @@ $sidebarMain = [
     'inbox' => ['WhatsApp Inbox', 'inbox.php'],
     'enquiries' => ['Enquiries', 'enquiries.php'],
     'bookings' => ['Bookings', 'bookings.php'],
+    'team' => [admin_can('team') ? 'Team & roles' : 'My login', 'team.php'],
 ];
 ?>
 <aside class="sidebar" id="sidebar">
@@ -47,18 +51,20 @@ $sidebarMain = [
             <?php foreach ($sidebarMain as $key => [$label, $route]): ?>
                 <a class="<?= $activeAdminSection === $key ? 'active' : '' ?>" href="<?= $sidebarPrefix . $route ?>"<?= $activeAdminSection === $key ? ' aria-current="page"' : '' ?>><?= $sidebarIcon($key) ?><span class="nav-label"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></span><?php if ($key === 'inbox'): ?><span class="nav-badge" data-inbox-badge<?= $sidebarUnread ? '' : ' hidden' ?>><?= $sidebarUnread > 99 ? '99+' : $sidebarUnread ?></span><?php endif; ?></a>
             <?php endforeach; ?>
+            <?php if ($settingsLinks): ?>
             <div class="sidebar-section-heading"><?= $sidebarIcon('settings') ?>Settings</div>
             <div class="sidebar-settings-links">
                 <?php foreach ($settingsLinks as $key => [$label, $route]): ?>
                     <a class="<?= $activeSettingsPage === $key ? 'active' : '' ?>" href="<?= $sidebarPrefix ?>settings/<?= htmlspecialchars($route, ENT_QUOTES, 'UTF-8') ?>"<?= $activeSettingsPage === $key ? ' aria-current="page"' : '' ?>><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></a>
                 <?php endforeach; ?>
             </div>
+            <?php endif; ?>
         </nav>
     </div>
     <div class="sidebar-footer">
         <div class="sidebar-user">
-            <span class="avatar" aria-hidden="true"><?= htmlspecialchars(strtoupper(substr((string) ($_SESSION['admin_username'] ?? 'A'), 0, 1)), ENT_QUOTES, 'UTF-8') ?></span>
-            <div><strong><?= htmlspecialchars((string) ($_SESSION['admin_username'] ?? 'admin'), ENT_QUOTES, 'UTF-8') ?></strong><small>Signed in</small></div>
+            <span class="avatar" aria-hidden="true"><?= htmlspecialchars(mb_strtoupper(mb_substr((string) (($_SESSION['admin_display_name'] ?? '') ?: ($_SESSION['admin_username'] ?? 'A')), 0, 1)), ENT_QUOTES, 'UTF-8') ?></span>
+            <div><strong><?= htmlspecialchars((string) (($_SESSION['admin_display_name'] ?? '') ?: ($_SESSION['admin_username'] ?? 'admin')), ENT_QUOTES, 'UTF-8') ?></strong><small><?= htmlspecialchars(admin_role_label(), ENT_QUOTES, 'UTF-8') ?></small></div>
         </div>
         <form method="post" action="<?= $sidebarPrefix ?>index.php">
             <input type="hidden" name="csrf" value="<?= htmlspecialchars($sidebarCsrf, ENT_QUOTES, 'UTF-8') ?>">
