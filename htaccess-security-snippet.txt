@@ -1,18 +1,20 @@
-# Security headers for the public website — paste this block at the END of the server's
+# Security headers for the public website — paste these blocks at the END of the server's
 # public_html/.htaccess (cPanel File Manager). Back up .htaccess first.
-# The admin pages already send their own stricter headers from PHP; this covers the public pages.
+# Every line that is not a directive starts with "#". A line without "#" breaks the whole site (error 500).
+# The admin pages send their own stricter headers from PHP.
 #
-# What each line does:
+# After pasting: open https://venutaihall.com in a private window and check the site still loads,
+# then check headers at https://securityheaders.com/?q=https://venutaihall.com/
+
+# ---------------------------------------------------------------------------------------------
+# PART 1 — basic headers (on the server since 2026-11-16)
 #   Strict-Transport-Security  browsers always use https for venutaihall.com (1 year). Subdomains are not included.
 #   X-Content-Type-Options     browsers do not guess file types (blocks some upload/script tricks).
 #   X-Frame-Options            other sites cannot show these pages inside a frame (clickjacking).
 #   Referrer-Policy            other sites only see "venutaihall.com", not full page addresses.
 #   Permissions-Policy         pages cannot ask for camera, microphone or location.
 #   X-Powered-By (unset)       hides the PHP version. Also set expose_php = Off in cPanel -> MultiPHP INI Editor.
-#
-# After pasting: open https://venutaihall.com in a private window and check the site still loads,
-# then check headers at https://securityheaders.com/?q=venutaihall.com
-
+# ---------------------------------------------------------------------------------------------
 <IfModule mod_headers.c>
   Header always set Strict-Transport-Security "max-age=31536000"
   Header always set X-Content-Type-Options "nosniff"
@@ -21,4 +23,22 @@
   Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
   Header always unset X-Powered-By
   Header unset X-Powered-By
+</IfModule>
+
+# ---------------------------------------------------------------------------------------------
+# PART 2 — Content-Security-Policy for the public .html pages only
+# (admin/*.php keep their own stricter policy; a site-wide CSP here would replace it).
+# Allowed outside sources, and why:
+#   connect.facebook.net    Meta Pixel script          www.facebook.com     Pixel events (PageView, Lead)
+#   fonts.googleapis.com    Google Fonts stylesheet    fonts.gstatic.com    Google Fonts files
+#   www.google.com          map iframe                 www.youtube.com      video iframe
+#   wa.me                   WhatsApp links/forms
+# 'unsafe-inline' is for style only (the pages use style="" attributes); inline scripts stay blocked.
+# Tested 2026-11-16 on all 35 public pages, the enquiry form + Lead event, and the gallery lightbox: no blocks.
+# If you add a new outside service (e.g. Google Analytics), add its domain here or it will be blocked.
+# ---------------------------------------------------------------------------------------------
+<IfModule mod_headers.c>
+  <FilesMatch "\.html$">
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https://www.facebook.com; connect-src 'self' https://www.facebook.com https://connect.facebook.net; frame-src https://www.google.com https://www.youtube.com https://www.youtube-nocookie.com; form-action 'self' https://wa.me; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; upgrade-insecure-requests"
+  </FilesMatch>
 </IfModule>
