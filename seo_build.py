@@ -329,7 +329,7 @@ def page_schema(slug, html):
                 elements.append(item)
             schemas.append({"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": elements})
     if slug == "":
-        schemas.append({"@context": "https://schema.org", "@type": "WebSite", "name": BRAND, "url": BASE + "/", "publisher": {"@id": BASE + "/#organization"}})
+        schemas.append({"@context": "https://schema.org", "@type": "WebSite", "@id": BASE + "/#website", "name": BRAND, "url": BASE + "/", "publisher": {"@id": BASE + "/#organization"}})
     if slug == "contact":
         schemas.append({"@context": "https://schema.org", "@type": "ContactPage", "mainEntity": {"@type": "Organization", "name": BRAND, "contactPoint": [{"@type": "ContactPoint", "telephone": phone, "contactType": "venue enquiries", "availableLanguage": ["English", "Marathi"]} for phone in PHONE]}})
     if slug == "gallery":
@@ -443,6 +443,23 @@ def update_home_schema(root: Path):
                 visible = VisibleFaqParser()
                 visible.feed(text)
                 node["mainEntity"] = [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in visible.pairs]
+        nodes = second.setdefault("@graph", [])
+        for node in nodes:
+            if node.get("@type") == "WebSite":
+                node["@id"] = BASE + "/#website"  # also set where the WebSite node is first added
+                node["publisher"] = {"@id": BASE + "/#organization"}
+        updated = re.search(r'<time datetime="(\d{4}-\d{2}-\d{2})"', text)
+        webpage = {
+            "@type": "WebPage", "@id": BASE + "/#webpage", "url": BASE + "/", "name": normalized_title(META[""][0]),
+            "description": normalized_description(META[""][1]), "inLanguage": "en",
+            "isPartOf": {"@id": BASE + "/#website"}, "about": {"@id": BASE + "/#venue"}, "publisher": {"@id": BASE + "/#organization"},
+            "primaryImageOfPage": {"@type": "ImageObject", "url": BASE + "/assets/og-image.jpg", "width": 1200, "height": 630},
+            "breadcrumb": {"@id": BASE + "/#breadcrumb"},
+        }
+        if updated:
+            webpage["dateModified"] = updated.group(1)
+        breadcrumb = {"@type": "BreadcrumbList", "@id": BASE + "/#breadcrumb", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": BASE + "/"}]}
+        nodes[:] = [n for n in nodes if n.get("@type") not in ("WebPage", "BreadcrumbList")] + [webpage, breadcrumb]
         video = re.search(r"https?://(?:www\.)?youtube\.com/embed/([\w-]+)", text)
         if video and not any(node.get("@type") == "VideoObject" for node in second.get("@graph", [])):
             second.setdefault("@graph", []).append({"@type": "VideoObject", "name": BRAND + " venue video", "description": "Video tour of the venue spaces.", "thumbnailUrl": "https://img.youtube.com/vi/" + video.group(1) + "/hqdefault.jpg", "embedUrl": "https://www.youtube.com/embed/" + video.group(1)})
@@ -607,7 +624,8 @@ RewriteRule ^(.+?)/?$ $1.html [L]
 def update_images_and_minified_links(root: Path):
     dimensions_path = root / ".build" / "image-dimensions.json"
     dimensions = json.loads(dimensions_path.read_text(encoding="utf-8")) if dimensions_path.exists() else {}
-    asset_ref = re.compile(r"((?:/assets/|assets/)[^\"'\s?#)]+)\.(?:jpe?g|png)\b", re.I)
+    # og-image.jpg stays a JPG: WhatsApp and Facebook link previews do not reliably show WebP.
+    asset_ref = re.compile(r"((?:/assets/|assets/)(?!og-image\.)[^\"'\s?#)]+)\.(?:jpe?g|png)\b", re.I)
     img_tag = re.compile(r"<img\b[^>]*>", re.I)
 
     def add_attr(tag, attr):
@@ -662,8 +680,8 @@ def update_images_and_minified_links(root: Path):
             return tag
 
         text = img_tag.sub(update_img, text)
-        text = re.sub(r"href=([\"'])/?styles\.css(?:\?[^\"']*)?\1", 'href="/styles.css"', text, flags=re.I)
-        text = re.sub(r"src=([\"'])/?script\.js(?:\?[^\"']*)?\1", 'src="/script.js"', text, flags=re.I)
+        text = re.sub(r"href=([\"'])/?styles(?:\.min)?\.css(?:\?[^\"']*)?\1", 'href="/styles.css"', text, flags=re.I)
+        text = re.sub(r"src=([\"'])/?script(?:\.min)?\.js(?:\?[^\"']*)?\1", 'src="/script.js"', text, flags=re.I)
         path.write_text(text, encoding="utf-8")
 
     for name in ("styles.css", "script.js"):
@@ -676,8 +694,8 @@ def update_images_and_minified_links(root: Path):
     js_hash = hashlib.sha256((root / "script.min.js").read_bytes()).hexdigest()[:10]
     for path in root.glob("*.html"):
         text = path.read_text(encoding="utf-8")
-        text = re.sub(r"href=([\"'])/?styles\.css(?:\?[^\"']*)?\1", f'href="/styles.min.css?v={css_hash}"', text, flags=re.I)
-        text = re.sub(r"src=([\"'])/?script\.js(?:\?[^\"']*)?\1", f'src="/script.min.js?v={js_hash}"', text, flags=re.I)
+        text = re.sub(r"href=([\"'])/?styles(?:\.min)?\.css(?:\?[^\"']*)?\1", f'href="/styles.min.css?v={css_hash}"', text, flags=re.I)
+        text = re.sub(r"src=([\"'])/?script(?:\.min)?\.js(?:\?[^\"']*)?\1", f'src="/script.min.js?v={js_hash}"', text, flags=re.I)
         path.write_text(text, encoding="utf-8")
 
 
