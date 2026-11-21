@@ -152,7 +152,7 @@ REDIRECTS = {
 }
 
 ANSWER_SUMMARIES = {
-    "": "Late Venutai Chavan Multipurpose Hall is an air-conditioned banquet venue in Nigdi, Pune. It lists a Big Hall for up to 1,200 guests, a Small Hall for up to 350, dining for 400 at a time, VIP dining for 50 and up to eight A/C guest rooms. Contact the team to enquire about dates.",
+    "": "Late Venutai Chavan Multipurpose Hall is an air-conditioned banquet hall and wedding venue in Nigdi (Pradhikaran), Pune, for families and organisers planning weddings, receptions, birthdays, family functions and corporate events. It has a Big Hall for up to 1,200 guests, a Small Hall for up to 350, dining for 400 at a time, VIP dining for 50 and up to eight A/C guest rooms.",
     "big-hall": "The Big Hall at Late Venutai Chavan Multipurpose Hall in Nigdi, Pune is listed for up to 1,200 guests. It is air-conditioned and suited to weddings, receptions and large events. Separate dining spaces and up to eight A/C guest rooms are also listed at the venue.",
     "small-hall": "The Small Hall at Late Venutai Chavan Multipurpose Hall in Nigdi, Pune is air-conditioned and listed for up to 350 guests. The venue lists it for engagements, birthdays, naming ceremonies and family functions, with separate dining spaces and guest rooms available to ask about.",
     "spaces": "Late Venutai Chavan Multipurpose Hall in Nigdi, Pune lists five air-conditioned spaces: Big Hall for up to 1,200 guests, Small Hall for up to 350, Dining Hall for 400 at a time, VIP A/C Dining for 50 and up to eight guest rooms.",
@@ -532,7 +532,9 @@ def update_page_meta(root: Path):
             text = text.replace("</main>", detail_links + "\n</main>", 1)
         answer = ANSWER_SUMMARIES.get(key)
         if answer:
-            answer_markup = '<p class="lede answer-summary">' + escape(answer) + '</p>'
+            # The homepage summary is labelled so readers and answer engines spot it as the key takeaway.
+            label = '<strong>In short:</strong> ' if key == "" else ''
+            answer_markup = '<p class="lede answer-summary">' + label + escape(answer) + '</p>'
             if answer_markup in text:
                 while text.count(answer_markup) > 1:
                     text = text.replace(answer_markup + answer_markup, answer_markup, 1)
