@@ -146,7 +146,12 @@ function wa_bot_staff_active(PDO $db, string $phone): bool
     $query = $db->prepare("SELECT MAX(sent_at) FROM wa_messages WHERE phone = ? AND direction = 'out' AND sent_by NOT IN ('bot', 'lead-alerts', 'booking-alerts')");
     $query->execute([$phone]);
     $last = $query->fetchColumn();
-    return $last && strtotime((string) $last) > strtotime(wa_now()) - WA_BOT_STAFF_PAUSE;
+    if (!$last || strtotime((string) $last) <= strtotime(wa_now()) - WA_BOT_STAFF_PAUSE) return false;
+    // If the bot spoke after staff, the guest is now chatting with the bot, not with staff.
+    $bot = $db->prepare("SELECT MAX(sent_at) FROM wa_messages WHERE phone = ? AND direction = 'out' AND sent_by = 'bot'");
+    $bot->execute([$phone]);
+    $lastBot = $bot->fetchColumn();
+    return !$lastBot || strtotime((string) $last) > strtotime((string) $lastBot);
 }
 
 /** Replies to new guest messages. Never throws; a failed reply is logged and the message stays in the inbox for staff. */
