@@ -13,7 +13,7 @@ const WA_BOT_EVENT_NAMES = [
     'mr' => ['लग्न', 'साखरपुडा', 'रिसेप्शन', 'वाढदिवस', 'बारसे / नामकरण', 'कौटुंबिक कार्यक्रम', 'कॉर्पोरेट कार्यक्रम', 'सामाजिक कार्यक्रम', 'हॉल पाहणी', 'इतर कार्यक्रम'],
 ];
 const WA_BOT_HALLS = ['big' => 'Big Hall', 'small' => 'Small Hall'];
-const WA_BOT_HALL_NAMES = ['en' => ['big' => 'Big Hall', 'small' => 'Small Hall'], 'hi' => ['big' => 'बिग हॉल', 'small' => 'स्मॉल हॉल'], 'mr' => ['big' => 'मोठा हॉल', 'small' => 'छोटा हॉल']];
+const WA_BOT_HALL_NAMES = ['en' => ['big' => 'Big Hall', 'small' => 'Small Hall'], 'hi' => ['big' => 'बड़ा हॉल', 'small' => 'छोटा हॉल'], 'mr' => ['big' => 'मोठा हॉल', 'small' => 'छोटा हॉल']];
 const WA_BOT_GUESTS = [50 => 'Up to 50', 100 => 'Up to 100', 200 => 'Up to 200', 350 => 'Up to 350', 500 => 'Up to 500', 800 => '500 or more'];
 const WA_BOT_GUEST_NAMES = [
     'hi' => [50 => '50 तक', 100 => '100 तक', 200 => '200 तक', 350 => '350 तक', 500 => '500 तक', 800 => '500 से ज़्यादा'],
@@ -57,7 +57,7 @@ const WA_BOT_TEXT = [
     'full_month' => ['😔 {hall} is fully booked in {month}. Please check another month or hall.', '😔 {month} में {hall} पूरा बुक है। कृपया दूसरा महीना या हॉल देखें।', '😔 {month} मध्ये {hall} पूर्ण बुक आहे. कृपया दुसरा महिना किंवा हॉल पहा.'],
     'step1' => ["📝 Booking request — step 1 of 3\nWhat is the occasion?", "📝 बुकिंग — स्टेप 1/3\nकौन सा कार्यक्रम है?", "📝 बुकिंग — पायरी 1/3\nकोणता कार्यक्रम आहे?"],
     'choose_event' => ['Choose event', 'कार्यक्रम चुनें', 'कार्यक्रम निवडा'],
-    'step2' => ["Step 2 of 3 – which hall?\n🏛️ Big Hall: large weddings and receptions (up to 1,200)\n🏠 Small Hall: up to 350 guests", "स्टेप 2/3 – कौन सा हॉल?\n🏛️ बिग हॉल: बड़ी शादी और रिसेप्शन (1,200 तक)\n🏠 स्मॉल हॉल: 350 मेहमानों तक", "पायरी 2/3 – कोणता हॉल?\n🏛️ मोठा हॉल: मोठी लग्ने व रिसेप्शन (1,200 पर्यंत)\n🏠 छोटा हॉल: 350 पाहुण्यांपर्यंत"],
+    'step2' => ["Step 2 of 3 – which hall?\n🏛️ Big Hall: large weddings and receptions (up to 1,200)\n🏠 Small Hall: up to 350 guests", "स्टेप 2/3 – कौन सा हॉल?\n🏛️ बड़ा हॉल: बड़ी शादी और रिसेप्शन (1,200 तक)\n🏠 छोटा हॉल: 350 मेहमानों तक", "पायरी 2/3 – कोणता हॉल?\n🏛️ मोठा हॉल: मोठी लग्ने व रिसेप्शन (1,200 पर्यंत)\n🏠 छोटा हॉल: 350 पाहुण्यांपर्यंत"],
     'step3' => ["Step 3 of 3 – please type your event date, for example:\n25-12-2026 or 25 Dec", "स्टेप 3/3 – कार्यक्रम की तारीख लिखें, जैसे:\n25-12-2026 या 25 Dec", "पायरी 3/3 – कार्यक्रमाची तारीख लिहा, उदा.:\n25-12-2026 किंवा 25 Dec"],
     'bad_date' => ["I couldn't read that as a future date 🙏 Please type it like 25-12-2026.\nOr shall our team call you to help?", "यह आगे की तारीख समझ नहीं आई 🙏 कृपया ऐसे लिखें: 25-12-2026\nया हमारी टीम आपको कॉल करे?", "ही पुढची तारीख समजली नाही 🙏 कृपया अशी लिहा: 25-12-2026\nकिंवा आमच्या टीमने आपल्याला कॉल करावा का?"],
     'booked' => ['😔 {hall} is already booked on {date}. Please type another date.', '😔 {date} को {hall} पहले से बुक है। कृपया दूसरी तारीख लिखें।', '😔 {date} रोजी {hall} आधीच बुक आहे. कृपया दुसरी तारीख लिहा.'],
@@ -79,7 +79,7 @@ const WA_BOT_FAQ = [
     'capacity' => ['/capacity|how many (guests|people)|kitne log|kitne guest|kiti lok|seating|crowd|क्षमता|किती लोक|कितने लोग|किती पाहुणे|कितने मेहमान/iu',
         ['👥 Capacity', '👥 क्षमता', '👥 क्षमता'],
         ["👥 Capacity\n\n🏛️ Big Hall: up to 1,200 guests\n   🍽️ Dining: 400 at a time\n   ⭐ VIP A/C Dining: 50 at a time\n\n🏠 Small Hall: up to 350 guests\n   🍽️ Dining: 50 at a time",
-         "👥 क्षमता\n\n🏛️ बिग हॉल: 1,200 मेहमानों तक\n   🍽️ डाइनिंग: एक बार में 400\n   ⭐ VIP A/C डाइनिंग: एक बार में 50\n\n🏠 स्मॉल हॉल: 350 मेहमानों तक\n   🍽️ डाइनिंग: एक बार में 50",
+         "👥 क्षमता\n\n🏛️ बड़ा हॉल: 1,200 मेहमानों तक\n   🍽️ डाइनिंग: एक बार में 400\n   ⭐ VIP A/C डाइनिंग: एक बार में 50\n\n🏠 छोटा हॉल: 350 मेहमानों तक\n   🍽️ डाइनिंग: एक बार में 50",
          "👥 क्षमता\n\n🏛️ मोठा हॉल: 1,200 पाहुण्यांपर्यंत\n   🍽️ डायनिंग: एका वेळी 400\n   ⭐ VIP A/C डायनिंग: एका वेळी 50\n\n🏠 छोटा हॉल: 350 पाहुण्यांपर्यंत\n   🍽️ डायनिंग: एका वेळी 50"]],
     'price' => ['/price|\brates?\b|\bcost|charges?\b|\brent\b|kitna|kitne ka|kiti paise|\bfees?\b|package|quot|budget|भाड|किंमत|पैसे|किराया|कितना|खर्च|रेट|दर किती/iu',
         ['💰 Rates / price', '💰 रेट / कीमत', '💰 दर / किंमत'],
@@ -97,7 +97,7 @@ const WA_BOT_FAQ = [
     'catering' => ['/cater|food|khana|jevan|lunch|dinner|halwai|menu card|जेवण|खाना|आचारी|केटरर|कैटरर|भोजन/iu',
         ['🍽️ Food / catering', '🍽️ खाना / कैटरिंग', '🍽️ जेवण / केटरिंग'],
         ["🍽️ You can bring your own caterer – catering support is available.\nBig Hall dining: 400 at a time · VIP A/C Dining: 50 · Small Hall dining: 50 at a time.\n\nPlease confirm current arrangements with our team.",
-         "🍽️ आप अपना कैटरर ला सकते हैं – कैटरिंग सपोर्ट उपलब्ध है।\nबिग हॉल डाइनिंग: एक बार में 400 · VIP A/C डाइनिंग: 50 · स्मॉल हॉल डाइनिंग: 50\n\nकृपया टीम से वर्तमान व्यवस्था की पुष्टि करें।",
+         "🍽️ आप अपना कैटरर ला सकते हैं – कैटरिंग सपोर्ट उपलब्ध है।\nबड़े हॉल की डाइनिंग: एक बार में 400 · VIP A/C डाइनिंग: 50 · छोटे हॉल की डाइनिंग: 50\n\nकृपया टीम से वर्तमान व्यवस्था की पुष्टि करें।",
          "🍽️ आपण आपला केटरर आणू शकता – केटरिंग सपोर्ट उपलब्ध आहे.\nमोठ्या हॉलचे डायनिंग: एका वेळी 400 · VIP A/C डायनिंग: 50 · छोट्या हॉलचे डायनिंग: 50\n\nकृपया सध्याची व्यवस्था टीमकडून निश्चित करा."]],
     'rooms' => ['/room|stay|accommodation|रूम|खोली|ठहर|राहण्या/iu',
         ['🛏️ Guest rooms', '🛏️ गेस्ट रूम', '🛏️ गेस्ट रूम'],
