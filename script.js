@@ -10,13 +10,42 @@
   // Meta Pixel. Paste the Pixel ID from Meta Events Manager here; while it is empty nothing loads.
   const META_PIXEL_ID = '975209128561261';
   const metaTrack = (...args) => { if (typeof window.fbq === 'function') window.fbq(...args); };
-  if (/^\d{10,20}$/.test(META_PIXEL_ID)) {
+  // DPDP: the Pixel (and the fbclid it relies on) loads only after the visitor taps Accept; Reject is remembered.
+  const CONSENT_KEY = 'vcm_ads_consent';
+  const adsConsent = () => { try { return localStorage.getItem(CONSENT_KEY); } catch { return null; } };
+  const loadPixel = () => {
+    if (window.fbq || !/^\d{10,20}$/.test(META_PIXEL_ID)) return;
     /* eslint-disable */
     !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
     /* eslint-enable */
     window.fbq('init', META_PIXEL_ID);
     window.fbq('track', 'PageView');
-  }
+  };
+  const consentBar = () => {
+    if (qs('.consent-bar')) return;
+    const bar = document.createElement('div');
+    bar.className = 'consent-bar';
+    bar.setAttribute('role', 'region');
+    bar.setAttribute('aria-label', 'Cookie choice');
+    bar.innerHTML = '<p>We would like to use Meta (Facebook/Instagram) cookies to measure our ads. They are optional and the site works fully without them. <a href="/privacy-policy">Privacy Policy</a></p>'
+      + '<div class="consent-actions"><button type="button" class="button button-ghost" data-consent="denied">Reject</button><button type="button" class="button" data-consent="granted">Accept</button></div>';
+    bar.addEventListener('click', (e) => {
+      const choice = e.target.closest('[data-consent]');
+      if (!choice) return;
+      const value = choice.getAttribute('data-consent');
+      try { localStorage.setItem(CONSENT_KEY, value); } catch { /* storage blocked: ask again next visit */ }
+      if (value === 'granted') loadPixel();
+      else {
+        metaTrack('consent', 'revoke');
+        try { const a = JSON.parse(localStorage.getItem('vcm_attribution') || 'null'); if (a && a.data) { delete a.data.fbclid; localStorage.setItem('vcm_attribution', JSON.stringify(a)); } } catch { /* ignore */ }
+      }
+      bar.remove();
+    });
+    document.body.appendChild(bar);
+  };
+  if (adsConsent() === 'granted') loadPixel();
+  else if (adsConsent() !== 'denied') consentBar();
+  qsa('[data-cookie-settings]').forEach((btn) => btn.addEventListener('click', (e) => { e.preventDefault(); consentBar(); }));
 
   // Ad attribution: keep the latest utm_* / fbclid from the landing URL for 30 days and send them with enquiries.
   const ATTR_KEY = 'vcm_attribution';
@@ -33,7 +62,8 @@
     const fresh = {};
     ATTR_FIELDS.forEach((key) => {
       const value = (params.get(key) || '').trim().slice(0, 150);
-      if (value) fresh[key] = value;
+      // fbclid is a Meta identifier, so it is kept only with ads consent.
+      if (value && (key !== 'fbclid' || adsConsent() === 'granted')) fresh[key] = value;
     });
     if (Object.keys(fresh).length) localStorage.setItem(ATTR_KEY, JSON.stringify({ at: Date.now(), data: fresh }));
   } catch { /* storage blocked */ }

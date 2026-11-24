@@ -112,7 +112,9 @@ try {
         }
         $id = (int) $db->lastInsertId();
         $activity = $db->prepare("INSERT INTO booking_activity (booking_id, action, details) VALUES (?, 'enquiry_created', ?)");
-        $activity->execute([$id, $row['source'] === 'meta-ads' ? 'Website enquiry received from a Meta ad' : 'Website enquiry received']);
+        // DPDP: keep a record that the guest ticked the privacy-notice consent on the form.
+        $consent = ($_POST['consent'] ?? '') === 'yes' ? ' · privacy notice accepted ' . date('Y-m-d H:i') : '';
+        $activity->execute([$id, ($row['source'] === 'meta-ads' ? 'Website enquiry received from a Meta ad' : 'Website enquiry received') . $consent]);
         $db->commit();
         rate_record($db, 'enquiry_ip', $clientIp);
     } catch (Throwable $error) {

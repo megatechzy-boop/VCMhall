@@ -96,8 +96,10 @@ function wa_bot_list(PDO $db, array $wa, string $phone, string $text, string $bu
 function wa_bot_menu(PDO $db, array $wa, string $phone, string $name, string $lead = ''): void
 {
     $hello = $lead !== '' ? $lead : 'Namaste' . ($name !== '' ? ' ' . $name : '') . ' 🙏 Welcome to Late Venutai Chavan Multipurpose Hall, Nigdi.';
+    // DPDP notice on every menu: where the policy is and how to opt out.
+    $privacy = "\n\n🔒 We use your details only to reply about your booking. Privacy: venutaihall.com/privacy-policy · Reply STOP to opt out.";
     wa_bot_save($db, $phone, 'menu');
-    wa_bot_buttons($db, $wa, $phone, $hello . "\n\nHow can we help you?", ['m:dates' => '📅 Available dates', 'm:book' => '📝 Book / Enquire', 'm:info' => 'ℹ️ Hall info']);
+    wa_bot_buttons($db, $wa, $phone, $hello . "\n\nHow can we help you?" . $privacy,['m:dates' => '📅 Available dates', 'm:book' => '📝 Book / Enquire', 'm:info' => 'ℹ️ Hall info']);
 }
 
 /** Free dates of one hall in one month (Y-m), from today on; a date is taken when any row has it as booked_date. */
@@ -171,7 +173,27 @@ function wa_bot_reply(PDO $db, array $config, array $wa, string $phone, string $
     $topic = $id === '' && ($m['type'] ?? '') === 'text' ? wa_bot_faq_match($text) : '';
     $greeting = $topic === '' && preg_match('/^(hi+|hello|hey|hlo|namaste|namaskar|menu|start|हाय|नमस्ते|नमस्कार)\b/iu', $text);
     $state = wa_bot_state($db, $phone);
-    $handedOver = $state['step'] === 'team' && $state['age'] < WA_BOT_STAFF_PAUSE;
+    // DPDP: STOP withdraws consent for automated messages, DELETE asks for erasure. Both last until the guest writes Hi again.
+    if ($id === '' && preg_match('/^\s*(stop|unsubscribe|opt ?out|delete( my data)?|erase|बंद)\s*[.!]*\s*$/iu', $text, $optout)) {
+        $erase = (bool) preg_match('/delete|erase/i', $optout[1]);
+        wa_bot_save($db, $phone, 'optout', ['erase' => $erase]);
+        if ($erase) {
+            try {
+                $to = booking_setting($db, 'venue_email', '') ?: (string) (($config['email_to'] ?? '') ?: 'bookings@venutaihall.com');
+                booking_send_email_message($db, $config, $to, 'DPDP: data deletion request from WhatsApp +' . $phone,
+                    "A guest asked on WhatsApp to delete their personal data.\n\nWhatsApp number: +{$phone}\nName: " . ($name ?: '-') . "\nReceived: " . date('d M Y, H:i')
+                    . "\n\nPlease within 30 days: delete or cancel their enquiries and WhatsApp chat in the admin panel (keep only booking/payment records the law requires), then reply to confirm.");
+            } catch (Throwable $error) {
+                error_log('WhatsApp bot erase alert: ' . $error->getMessage());
+            }
+        }
+        wa_bot_text($db, $wa, $phone, $erase
+            ? "✅ We have received your request to delete your personal data. Our team will complete it and confirm within 30 days (records we must keep by law, such as payment receipts, are kept only as long as required).\nOur assistant will not message you again. Write Hi any time to start again."
+            : "✅ Done. Our assistant will not message you again.\nTo ask us to delete your data, reply DELETE or email bookings@venutaihall.com. Write Hi any time to start again.");
+        return;
+    }
+    if ($state['step'] === 'optout' && !$greeting && $id === '') return;
+    $handedOver =$state['step'] === 'team' && $state['age'] < WA_BOT_STAFF_PAUSE;
     if ($state['age'] > 7200) $state = ['step' => '', 'data' => [], 'age' => 0];
 
     if ($id === '' && !$greeting) {
