@@ -65,6 +65,12 @@ const WA_BOT_TEXT = [
     'choose_guests' => ['Choose guests', 'मेहमान चुनें', 'पाहुणे निवडा'],
     'guests_noted' => ['👍 Noted: {guests} guests. Our team will have everything ready when they call you.', '👍 नोट किया: {guests} मेहमान। कॉल के समय टीम पूरी तैयारी के साथ बात करेगी।', '👍 नोंद केली: {guests} पाहुणे. कॉलच्या वेळी टीम पूर्ण तयारीने बोलेल.'],
     'thanks' => ['🙏 You are welcome! Anything else? Choose below or type your question.', '🙏 आपका स्वागत है! और कुछ? नीचे से चुनें या सवाल लिखें।', '🙏 आपले स्वागत आहे! अजून काही? खालीलपैकी निवडा किंवा प्रश्न लिहा.'],
+    'date_check' => ["📅 {date}\n🏛️ {bighall}: {big}\n🏠 {smallhall}: {small}\n\nA date is held only after our team confirms the booking.", "📅 {date}\n🏛️ {bighall}: {big}\n🏠 {smallhall}: {small}\n\nटीम की पुष्टि के बाद ही तारीख पक्की होती है।", "📅 {date}\n🏛️ {bighall}: {big}\n🏠 {smallhall}: {small}\n\nटीमने पुष्टी केल्यावरच तारीख निश्चित होते."],
+    'is_free' => ['✅ available', '✅ खाली है', '✅ उपलब्ध आहे'],
+    'is_booked' => ['❌ already booked', '❌ बुक है', '❌ बुक आहे'],
+    'btn_book_this' => ['📝 Book this date', '📝 यह तारीख बुक करें', '📝 ही तारीख बुक करा'],
+    'btn_other_dates' => ['📅 Other dates', '📅 दूसरी तारीखें', '📅 इतर तारखा'],
+    'wrong' => ['No problem 🙏 Have a good day!', 'कोई बात नहीं 🙏 आपका दिन शुभ हो!', 'काही हरकत नाही 🙏 आपला दिवस शुभ जावो!'],
     'restart' => ['Let us start again.', 'चलिए फिर से शुरू करते हैं।', 'चला, पुन्हा सुरू करूया.'],
     'expired' => ['This request has expired. Let us start again.', 'यह अनुरोध पुराना हो गया है। चलिए फिर से शुरू करते हैं।', 'ही विनंती जुनी झाली आहे. चला, पुन्हा सुरू करूया.'],
     'info_title' => ['ℹ️ What would you like to know?', 'ℹ️ आप क्या जानना चाहेंगे?', 'ℹ️ आपल्याला काय जाणून घ्यायचे आहे?'],
@@ -76,12 +82,15 @@ const WA_BOT_TEXT = [
 // Hall FAQ, facts as published on the website: key => [keyword regex for typed questions, [en, hi, mr] titles (24 max), [en, hi, mr] answers].
 // Order matters for typed questions: the first matching topic answers.
 const WA_BOT_FAQ = [
-    'capacity' => ['/capacity|how many (guests|people)|kitne log|kitne guest|kiti lok|seating|crowd|क्षमता|किती लोक|कितने लोग|किती पाहुणे|कितने मेहमान/iu',
+    'capacity' => ['/capacity|how many (guests|people)|how big|\bsize\b|kiti mot|kitna bada|kitni badi|\d{2,4}\s*\+?\s*(log|lok|people|guests?|pahun|पाहुण|लोग|लोक|मेहमान)|kitne log|kitne guest|kiti lok|seating|crowd|क्षमता|किती लोक|कितने लोग|किती पाहुणे|कितने मेहमान/iu',
         ['👥 Capacity', '👥 क्षमता', '👥 क्षमता'],
         ["👥 Capacity\n\n🏛️ Big Hall: up to 1,200 guests\n   🍽️ Dining: 400 at a time\n   ⭐ VIP A/C Dining: 50 at a time\n\n🏠 Small Hall: up to 350 guests\n   🍽️ Dining: 50 at a time",
          "👥 क्षमता\n\n🏛️ बड़ा हॉल: 1,200 मेहमानों तक\n   🍽️ डाइनिंग: एक बार में 400\n   ⭐ VIP A/C डाइनिंग: एक बार में 50\n\n🏠 छोटा हॉल: 350 मेहमानों तक\n   🍽️ डाइनिंग: एक बार में 50",
          "👥 क्षमता\n\n🏛️ मोठा हॉल: 1,200 पाहुण्यांपर्यंत\n   🍽️ डायनिंग: एका वेळी 400\n   ⭐ VIP A/C डायनिंग: एका वेळी 50\n\n🏠 छोटा हॉल: 350 पाहुण्यांपर्यंत\n   🍽️ डायनिंग: एका वेळी 50"]],
-    'price' => ['/price|\brates?\b|\bcost|charges?\b|\brent\b|kitna|kitne ka|kiti paise|\bfees?\b|package|quot|budget|भाड|किंमत|पैसे|किराया|कितना|खर्च|रेट|दर किती/iu',
+    'location' => ['/address|location|where|kaha|kidhar|kuthe|\bmap\b|direction|reach|\bdoor\b|\bdur\b|distance|station|\bbus\b|metro|railway|kaise aa|kase ya|route|दूर|स्टेशन|बस|पत्ता|कुठे|कहाँ|कहां|लोकेशन|पता/iu',
+        ['📍 Location / address', '📍 पता / लोकेशन', '📍 पत्ता / लोकेशन'],
+        ["📍 " . WA_BOT_ADDRESS . "\n\nGoogle Maps: " . WA_BOT_MAP, "📍 पता:\n" . WA_BOT_ADDRESS . "\n\nGoogle Maps: " . WA_BOT_MAP, "📍 पत्ता:\n" . WA_BOT_ADDRESS . "\n\nGoogle Maps: " . WA_BOT_MAP]],
+    'price' => ['/price|\brates?\b|\bcost|charges?\b|\brent\b|kitna|kitne ka|kiti paise|bhad|kiraya|how much|deposit|advance|payment|\bpay\b|\bupi\b|\bgst\b|पेमेंट|\bfees?\b|package|quot|budget|भाड|किंमत|पैसे|किराया|कितना|खर्च|रेट|दर किती/iu',
         ['💰 Rates / price', '💰 रेट / कीमत', '💰 दर / किंमत'],
         ["💰 Rates depend on the hall, the date and the package, so they are not fixed online.\n\nTap 📞 Talk to team for a quick quote, or 📝 Book / Enquire and our team will call you with the best rate.",
          "💰 रेट हॉल, तारीख और पैकेज पर निर्भर करता है, इसलिए ऑनलाइन तय नहीं है।\n\n📞 टीम से बात करें – तुरंत कोटेशन मिलेगा, या 📝 बुकिंग करें – टीम आपको सबसे अच्छे रेट के साथ कॉल करेगी।",
@@ -91,29 +100,31 @@ const WA_BOT_FAQ = [
         ["👀 Yes, you are welcome to visit and see the halls, dining spaces and guest rooms.\n🕘 Mon – Sun, 9:00 AM – 10:00 PM\n\nTap 📞 Talk to team to fix a time.\n📍 " . WA_BOT_MAP,
          "👀 हाँ, आप हॉल, डाइनिंग और गेस्ट रूम देखने ज़रूर आइए।\n🕘 सोम – रवि, सुबह 9 – रात 10\n\nसमय तय करने के लिए 📞 टीम से बात करें।\n📍 " . WA_BOT_MAP,
          "👀 हो, हॉल, डायनिंग आणि गेस्ट रूम पाहण्यासाठी नक्की या.\n🕘 सोम – रवि, सकाळी 9 – रात्री 10\n\nवेळ ठरवण्यासाठी 📞 टीमशी बोला.\n📍 " . WA_BOT_MAP]],
-    'location' => ['/address|location|where|kaha|kidhar|kuthe|\bmap\b|direction|reach|पत्ता|कुठे|कहाँ|कहां|लोकेशन|पता/iu',
-        ['📍 Location / address', '📍 पता / लोकेशन', '📍 पत्ता / लोकेशन'],
-        ["📍 " . WA_BOT_ADDRESS . "\n\nGoogle Maps: " . WA_BOT_MAP, "📍 पता:\n" . WA_BOT_ADDRESS . "\n\nGoogle Maps: " . WA_BOT_MAP, "📍 पत्ता:\n" . WA_BOT_ADDRESS . "\n\nGoogle Maps: " . WA_BOT_MAP]],
-    'catering' => ['/cater|food|khana|jevan|lunch|dinner|halwai|menu card|जेवण|खाना|आचारी|केटरर|कैटरर|भोजन/iu',
+    'catering' => ['/cater|ketring|catring|keter|kitchen|kichan|kichen|food|khana|jevan|lunch|dinner|halwai|menu card|non ?veg|nonveg|किचन|स्वयंपाक|रसोई|मांसाहार|नॉन ?व्हेज|नॉन ?वेज|जेवण|खाना|आचारी|केटरर|कैटरर|भोजन/iu',
         ['🍽️ Food / catering', '🍽️ खाना / कैटरिंग', '🍽️ जेवण / केटरिंग'],
-        ["🍽️ You can bring your own caterer – catering support is available.\nBig Hall dining: 400 at a time · VIP A/C Dining: 50 · Small Hall dining: 50 at a time.\n\nPlease confirm current arrangements with our team.",
-         "🍽️ आप अपना कैटरर ला सकते हैं – कैटरिंग सपोर्ट उपलब्ध है।\nबड़े हॉल की डाइनिंग: एक बार में 400 · VIP A/C डाइनिंग: 50 · छोटे हॉल की डाइनिंग: 50\n\nकृपया टीम से वर्तमान व्यवस्था की पुष्टि करें।",
-         "🍽️ आपण आपला केटरर आणू शकता – केटरिंग सपोर्ट उपलब्ध आहे.\nमोठ्या हॉलचे डायनिंग: एका वेळी 400 · VIP A/C डायनिंग: 50 · छोट्या हॉलचे डायनिंग: 50\n\nकृपया सध्याची व्यवस्था टीमकडून निश्चित करा."]],
+        ["🍽️ You can bring your own caterer – catering support is available.\nBig Hall dining: 400 at a time · VIP A/C Dining: 50 · Small Hall dining: 50 at a time.\n🍳 Kitchen and food rules (for example non-veg): our team will confirm.\n\nPlease confirm current arrangements with our team.",
+         "🍽️ आप अपना कैटरर ला सकते हैं – कैटरिंग सपोर्ट उपलब्ध है।\nबड़े हॉल की डाइनिंग: एक बार में 400 · VIP A/C डाइनिंग: 50 · छोटे हॉल की डाइनिंग: 50\n🍳 किचन और खाने के नियम (जैसे नॉन-वेज): हमारी टीम पुष्टि करेगी।\n\nकृपया टीम से वर्तमान व्यवस्था की पुष्टि करें।",
+         "🍽️ आपण आपला केटरर आणू शकता – केटरिंग सपोर्ट उपलब्ध आहे.\nमोठ्या हॉलचे डायनिंग: एका वेळी 400 · VIP A/C डायनिंग: 50 · छोट्या हॉलचे डायनिंग: 50\n🍳 किचन आणि जेवणाचे नियम (उदा. नॉन-व्हेज): आमची टीम निश्चित सांगेल.\n\nकृपया सध्याची व्यवस्था टीमकडून निश्चित करा."]],
     'rooms' => ['/room|stay|accommodation|रूम|खोली|ठहर|राहण्या/iu',
         ['🛏️ Guest rooms', '🛏️ गेस्ट रूम', '🛏️ गेस्ट रूम'],
         ["🛏️ Up to 8 air-conditioned guest rooms are available at the venue.\nPlease confirm availability for your date with our team.",
          "🛏️ हॉल में 8 तक A/C गेस्ट रूम उपलब्ध हैं।\nअपनी तारीख के लिए उपलब्धता टीम से पूछें।",
          "🛏️ हॉलमध्ये 8 पर्यंत A/C गेस्ट रूम उपलब्ध आहेत.\nआपल्या तारखेसाठी उपलब्धता टीमकडून विचारा."]],
-    'facilities' => ['/\bac\b|a\/c|air.?condition|sound|speaker|\bdj\b|\bmic\b|projector|\bled\b|screen|wi-?fi|facilit|सुविधा|एसी|साउंड/iu',
+    'facilities' => ['/\bac\b|a\/c|air.?condition|generator|power ?backup|backup|\blight|\blift|elevator|wheel ?chair|ramp|decorat|decor\b|\bstage|mandap|cctv|सजावट|डेकोरेशन|जनरेटर|लिफ्ट|स्टेज|sound|speaker|\bdj\b|\bmic\b|projector|\bled\b|screen|wi-?fi|facilit|सुविधा|एसी|साउंड/iu',
         ['🎤 Facilities / A/C', '🎤 सुविधाएँ / A/C', '🎤 सुविधा / A/C'],
-        ["🎤 Facilities\n❄️ Fully air-conditioned halls and dining spaces\n🔊 Acoustic sound system\n📺 LED screen and projector\n📶 Wi-Fi\n🚗 Parking",
-         "🎤 सुविधाएँ\n❄️ पूरी तरह A/C हॉल और डाइनिंग\n🔊 साउंड सिस्टम\n📺 LED स्क्रीन और प्रोजेक्टर\n📶 Wi-Fi\n🚗 पार्किंग",
-         "🎤 सुविधा\n❄️ पूर्ण A/C हॉल आणि डायनिंग\n🔊 साउंड सिस्टम\n📺 LED स्क्रीन आणि प्रोजेक्टर\n📶 Wi-Fi\n🚗 पार्किंग"]],
+        ["🎤 Facilities\n❄️ Fully air-conditioned halls and dining spaces\n🔊 Acoustic sound system\n📺 LED screen and projector\n📶 Wi-Fi\n🚗 Parking\n🛗 Lift · 📹 CCTV · 🧯 Fire safety\n\nDecoration, stage or power backup? Our team will confirm.",
+         "🎤 सुविधाएँ\n❄️ पूरी तरह A/C हॉल और डाइनिंग\n🔊 साउंड सिस्टम\n📺 LED स्क्रीन और प्रोजेक्टर\n📶 Wi-Fi\n🚗 पार्किंग\n🛗 लिफ्ट · 📹 CCTV · 🧯 फायर सेफ्टी\n\nडेकोरेशन, स्टेज या पावर बैकअप? हमारी टीम पुष्टि करेगी।",
+         "🎤 सुविधा\n❄️ पूर्ण A/C हॉल आणि डायनिंग\n🔊 साउंड सिस्टम\n📺 LED स्क्रीन आणि प्रोजेक्टर\n📶 Wi-Fi\n🚗 पार्किंग\n🛗 लिफ्ट · 📹 CCTV · 🧯 फायर सेफ्टी\n\nडेकोरेशन, स्टेज किंवा पॉवर बॅकअप? आमची टीम निश्चित सांगेल."]],
     'parking' => ['/parking|park\b|पार्किंग/iu',
         ['🚗 Parking', '🚗 पार्किंग', '🚗 पार्किंग'],
         ["🚗 Yes, parking is available at the venue. Please ask our team about parking for your guest count.",
          "🚗 हाँ, हॉल में पार्किंग उपलब्ध है। अपने मेहमानों की संख्या के हिसाब से टीम से पूछ लें।",
          "🚗 हो, हॉलमध्ये पार्किंग उपलब्ध आहे. पाहुण्यांच्या संख्येनुसार टीमकडून माहिती घ्या."]],
+    'photos' => ['/photo|pic\b|pics|picture|image|video|gallery|फोटो|व्हिडिओ|वीडियो|गॅलरी/iu',
+        ['📸 Photos', '📸 फ़ोटो', '📸 फोटो'],
+        ["📸 Photos of all halls, dining and rooms:\nhttps://venutaihall.com/gallery\n\nWant to see it in person? Tap 📞 Talk to team to fix a visit.",
+         "📸 सभी हॉल, डाइनिंग और रूम की फ़ोटो:\nhttps://venutaihall.com/gallery\n\nखुद देखना चाहें तो विज़िट तय करने के लिए 📞 टीम से बात करें।",
+         "📸 सर्व हॉल, डायनिंग आणि रूमचे फोटो:\nhttps://venutaihall.com/gallery\n\nप्रत्यक्ष पाहायचे असल्यास भेट ठरवण्यासाठी 📞 टीमशी बोला."]],
     'timing' => ['/timing|hours|open|close|kab tak|kitne baje|kiti vajta|वेळ|समय|टाइम|किती वाजता|कितने बजे/iu',
         ['🕘 Timings', '🕘 समय', '🕘 वेळ'],
         ["🕘 The venue is open Monday – Sunday, 9:00 AM – 10:00 PM.",
@@ -123,6 +134,27 @@ const WA_BOT_FAQ = [
 
 const WA_BOT_YES = '/^\s*(yes|y|yeah|yep|ok|okay|sure|please|haan|haa|han|ha|ji|ho|hoy|chalel|hmm+|हाँ|हां|हा|जी|हो|होय|चालेल|ठीक)(?=[\s.,!?🙏]|$)/iu';
 const WA_BOT_NO = '/^\s*(no|nope|nah|nahi|nahin|nako|naka|नहीं|नही|नाही|नको)(?=[\s.,!?🙏]|$)/iu';
+// Free-text understanding (Latin and Devanagari, common spellings). The order of checks lives in wa_bot_reply().
+const WA_BOT_CALL_RE = '/\b(call|phone|ring)\s*(me|karo|kar do|kara|kariye|kijiye|back|please|kr|kro)\b|\bcall ?back|\bmanager|\bnumber\s*(do|dya|dena|bhejo|pathva|send|share)|baat\s*kar(ni|na|o)|bolaych|बोलायच|बात कर|कॉल कर|फोन कर|मॅनेजर|मैनेजर|नंबर (द्या|दो|भेजो|पाठवा)/iu';
+const WA_BOT_STAFF_RE = '/cancel|confirm (hua|zala|ho gaya|jhala)|booking (status|confirm)|my booking|maz[ae] booking|majh[ae] booking|mera booking|meri booking|postpone|reschedule|change (the )?date|date (badal|change)|refund|paise wapas|receipt|pavti|पावती|रद्द|कॅन्सल|कैंसल|रिफंड/iu';
+const WA_BOT_BOOK_RE = '/\bbook|booking|बुक|reserve|kara?ych|kr?aych|karna|krna|karvay|करायच|करना|pahije|पाहिजे|\bhava\b|\bhavi\b|हवा|हवी|chahiye|chaiye|चाहिए|\bneed\b|\bwant\b|enquir|inquir|चौकशी|पूछताछ/iu';
+const WA_BOT_AVAIL_RE = '/availab|khali|khaali|खाली|upalabdh|उपलब्ध|\bfree\b|\bdate|tarikh|tarkh|तारीख|तारख/iu';
+const WA_BOT_EVENT_RE = [
+    0 => '/wedding|marriage|shaa?di|vivah|lagn|लग्न|शादी|विवाह/iu',
+    1 => '/engagement|sakhar ?puda|sagai|ring ceremony|साखरपुडा|सगाई/iu',
+    2 => '/reception|रिसेप्शन/iu',
+    3 => '/birthday|b\'?day|vadh ?divas|wadh ?divas|janam ?din|जन्मदिन|वाढदिवस|बर्थडे/iu',
+    4 => '/naming|barsa|barse|namkaran|नामकरण|बारस/iu',
+    5 => '/family function|puja|pooja|satyanarayan|dohale|baby shower|godh ?bharai|griha ?pravesh|पूजा|सत्यनारायण|डोहाळ|गोदभराई|कौटुंबिक/iu',
+    6 => '/corporate|office (event|party)|seminar|conference|meeting|मीटिंग|सेमिनार/iu',
+    7 => '/social|gathering|get ?together|sammelan|melava|reunion|मेळावा|संमेलन/iu',
+];
+const WA_BOT_HALL_RE = [
+    'big' => '/big hall|ba?d[ae] hall|mot(h|ha|hya) hall|मोठा हॉल|मोठ्या हॉल|बड़ा हॉल|बडा हॉल|बड़े हॉल/iu',
+    'small' => '/small hall|chh?ot[ae] hall|chotya hall|lahan hall|छोटा हॉल|छोट्या हॉल|छोटे हॉल|लहान हॉल/iu',
+];
+const WA_BOT_NEUTRAL = '/^\s*(ok+|okay|k+|hmm+|acha|achha|accha|theek( hai)?|thik( hai)?|ठीक( है| आहे)?|बरं|बर|ji|जी)?[\s.!\p{So}\p{Sk}\x{FE0F}\x{200D}]*$/u';
+const WA_BOT_WRONG = '/wrong number|galat number|chukicha number|चुकीचा नंबर|गलत नंबर|by mistake|mistake se/iu';
 const WA_BOT_THANKS = '/^\s*(thanks?|thank you|thx|ty|ok thanks?|dhanyavad|dhanyawad|shukriya|धन्यवाद|शुक्रिया|आभार|thank u)(?=[\s.,!?🙏]|$)/iu';
 
 function wa_bot_lang_index(string $lang): int
@@ -143,8 +175,8 @@ function wa_bot_detect_lang(string $text): string
     if (preg_match('/^\s*(marathi|मराठी)\s*$/iu', $text)) return 'mr';
     if (preg_match('/^\s*(hindi|हिंदी|हिन्दी)\s*$/iu', $text)) return 'hi';
     if (preg_match('/^\s*(english|इंग्लिश|इंग्रजी)\s*$/iu', $text)) return 'en';
-    $mr = preg_match_all('/आहे|आहेत|काय|मला|आम्हाला|तुम्ही|हवा|हवी|हवे|पाहिजे|किती|कुठे|कसे|नाही|होय|बघ|पाहा|लग्न|साठी|च्या|नमस्कार|राम राम|\b(aahe|ahe|ahet|kay|kiti|kuthe|pahije|mala|amhala|tumhi|hava|havi|nahi ka|ram ram|sanga|kasa|kasha|lagna|sathi|mhanje)\b/iu', $text);
-    $hi = preg_match_all('/है|हैं|क्या|मुझे|हमें|चाहिए|कितना|कितने|कहाँ|कहां|कैसे|नहीं|हाँ|के लिए|आप|नमस्ते|\b(hai|hain|kya|kitna|kitne|kaha|kahan|chahiye|mujhe|hume|humko|nahi|haan|batao|bataiye|kab|kaise|kijiye|karna|milega)\b/iu', $text);
+    $mr = preg_match_all('/आहे|आहेत|काय|मला|आम्हाला|तुम्ही|हवा|हवी|हवे|पाहिजे|किती|कुठे|कसे|नाही|होय|बघ|पाहा|लग्न|साठी|च्या|नमस्कार|राम राम|\b(aahe|ahe|ahet|kay|kiti|kuthe|pahije|mala|amhala|tumhi|hava|havi|nahi ka|ram ram|sanga|kasa|kasha|lagna|sathi|mhanje|kraycha|karaycha|baghayala|yeu|shakto|shakta|kadhi|asel|zala|hoil|la)\b/iu', $text);
+    $hi = preg_match_all('/है|हैं|क्या|मुझे|हमें|चाहिए|कितना|कितने|कहाँ|कहां|कैसे|नहीं|हाँ|के लिए|आप|नमस्ते|\b(hai|hain|kya|kitna|kitne|kaha|kahan|chahiye|mujhe|hume|humko|nahi|haan|batao|bataiye|kab|kaise|kijiye|karna|krna|milega|liye|sakte|ko|wala|hua|karo|kro)\b/iu', $text);
     if ($mr === 0 && $hi === 0) {
         if (preg_match('/\p{Devanagari}/u', $text)) return 'mr'; // shortcut: unclear Devanagari is taken as Marathi (Pune guests)
         return preg_match('/\b(please|what|where|when|how|need|want|available|price|booking|book|hall|date|the|is|for)\b/i', $text) ? 'en' : '';
@@ -167,6 +199,57 @@ function wa_bot_lang(PDO $db, string $phone, string $text): string
     return $detected ?: ($saved ?: 'en');
 }
 
+/** Every FAQ topic the message asks about (at most three), in FAQ order. */
+function wa_bot_faq_matches(string $text): array
+{
+    $keys = [];
+    foreach (WA_BOT_FAQ as $key => [$pattern]) {
+        if (preg_match($pattern, $text)) $keys[] = $key;
+    }
+    return array_slice($keys, 0, 3);
+}
+
+/** A future date written inside a sentence ("17 feb ko", "on 20 March", "25/12 la"); Y-m-d or ''. */
+function wa_bot_find_date(string $text): string
+{
+    $text = strtr($text, ['०' => '0', '१' => '1', '२' => '2', '३' => '3', '४' => '4', '५' => '5', '६' => '6', '७' => '7', '८' => '8', '९' => '9']);
+    $candidates = [];
+    if (preg_match_all('/(?<!\d)(\d{1,2})(?:st|nd|rd|th)?[\s\-\/.]+([a-z]+|[\p{Devanagari}\p{M}]+|\d{1,2})(?:[\s\-\/.,]+(\d{4}|\d{2})(?!\d))?/iu', $text, $ms, PREG_SET_ORDER)) {
+        foreach ($ms as $m) $candidates[] = trim($m[1] . ' ' . $m[2] . ' ' . ($m[3] ?? ''));
+    }
+    if (preg_match_all('/([a-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?(?!\d)(?:,?\s+(\d{4}))?/iu', $text, $ms, PREG_SET_ORDER)) {
+        foreach ($ms as $m) $candidates[] = trim($m[1] . ' ' . $m[2] . ' ' . ($m[3] ?? ''));
+    }
+    foreach ($candidates as $candidate) {
+        $date = wa_bot_parse_date($candidate);
+        if ($date !== '' && booking_valid_date($date)) return $date;
+    }
+    return '';
+}
+
+/** What a typed message is about. */
+function wa_bot_understand(string $text): array
+{
+    $sense = ['faq' => wa_bot_faq_matches($text), 'call' => (bool) preg_match(WA_BOT_CALL_RE, $text), 'staff' => (bool) preg_match(WA_BOT_STAFF_RE, $text),
+        'book' => (bool) preg_match(WA_BOT_BOOK_RE, $text), 'avail' => (bool) preg_match(WA_BOT_AVAIL_RE, $text), 'date' => wa_bot_find_date($text), 'preset' => []];
+    foreach (WA_BOT_EVENT_RE as $i => $pattern) {
+        if (preg_match($pattern, $text)) { $sense['preset']['event_i'] = $i; break; }
+    }
+    foreach (WA_BOT_HALL_RE as $hall => $pattern) {
+        if (preg_match($pattern, $text)) { $sense['preset']['hall'] = $hall; break; }
+    }
+    if (preg_match('/(\d{2,4})\s*\+?\s*(people|guests?|persons?|log|lok|pahun|पाहुण|लोग|लोक|मेहमान|जण)/iu', $text, $m)) {
+        foreach (array_keys(WA_BOT_GUESTS) as $count) {
+            if ((int) $m[1] <= $count) { $sense['preset']['guests'] = $count; break; }
+        }
+        $sense['preset']['guests'] = $sense['preset']['guests'] ?? 800;
+    }
+    if ($sense['date'] !== '') $sense['preset']['date'] = $sense['date'];
+    if ($sense['faq'] === ['capacity'] && ($sense['book'] || isset($sense['preset']['event_i'])) && isset($sense['preset']['guests'])) $sense['faq'] = [];
+    $sense['any'] = $sense['faq'] || $sense['call'] || $sense['staff'] || $sense['book'] || $sense['date'] !== '' || isset($sense['preset']['event_i']);
+    return $sense;
+}
+
 function wa_bot_faq_match(string $text): string
 {
     foreach (WA_BOT_FAQ as $key => [$pattern]) {
@@ -175,10 +258,11 @@ function wa_bot_faq_match(string $text): string
     return '';
 }
 
-function wa_bot_faq(PDO $db, array $wa, string $phone, string $lang, string $key): void
+function wa_bot_faq(PDO $db, array $wa, string $phone, string $lang, string|array $keys): void
 {
+    $answers = array_map(static fn($key) => WA_BOT_FAQ[$key][2][wa_bot_lang_index($lang)], (array) $keys);
     wa_bot_save($db, $phone, 'menu');
-    wa_bot_buttons($db, $wa, $phone, WA_BOT_FAQ[$key][2][wa_bot_lang_index($lang)], ['m:book' => wa_bot_t($lang, 'btn_book'), 'm:info' => wa_bot_t($lang, 'btn_more'), 'm:team' => wa_bot_t($lang, 'btn_team')]);
+    wa_bot_buttons($db, $wa, $phone, mb_substr(implode("\n\n━━━━━━━━\n\n", $answers), 0, 1000), ['m:book' => wa_bot_t($lang, 'btn_book'), 'm:info' => wa_bot_t($lang, 'btn_more'), 'm:team' => wa_bot_t($lang, 'btn_team')]);
 }
 
 function wa_bot_ensure_schema(PDO $db): void
@@ -311,8 +395,13 @@ function wa_bot_parse_date(string $text, ?string $today = null): string
     $text = trim(preg_replace('/(\d)(st|nd|rd|th)\b/u', '$1', $text) ?? $text, " .,");
     $months = ['jan' => 1, 'feb' => 2, 'mar' => 3, 'apr' => 4, 'may' => 5, 'jun' => 6, 'jul' => 7, 'aug' => 8, 'sep' => 9, 'oct' => 10, 'nov' => 11, 'dec' => 12];
     foreach (WA_BOT_MONTHS as $names) foreach ($names as $i => $word) $months[mb_strtolower($word)] = $i + 1;
-    $monthOf = static function (string $word) use ($months): int {
-        foreach ($months as $key => $n) if (str_starts_with($word, $key) || $word === $key) return $n;
+    $full = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+    $monthOf = static function (string $word) use ($months, $full): int {
+        if (preg_match('/^[a-z]+$/', $word)) {
+            foreach ($full as $i => $name) if (strlen($word) >= 3 && str_starts_with($name, $word)) return $i + 1;
+            return 0;
+        }
+        foreach ($months as $key => $n) if (str_starts_with($word, $key)) return $n;
         return 0;
     };
     $y = 0;
@@ -388,9 +477,9 @@ function wa_bot_reply(PDO $db, array $config, array $wa, string $phone, string $
     }
     // Typing just a language name switches the language and shows the menu.
     $switch = $id === '' && preg_match('/^\s*(marathi|मराठी|hindi|हिंदी|हिन्दी|english|इंग्लिश|इंग्रजी)\s*$/iu', $text);
-    // A typed question ("Hi, is parking available?") gets its answer instead of the menu.
-    $topic = $id === '' && $type === 'text' && !$switch ? wa_bot_faq_match($text) : '';
-    $greeting = $switch || ($topic === '' && preg_match('/^\s*(hi+|hello|helo|hey|hlo|namaste|namaskar|ram ram|menu|start|हाय|हॅलो|हेलो|नमस्ते|नमस्कार|राम राम|मेनू)(?=[\s.,!?🙏]|$)/iu', $text));
+    // What the guest typed ("Hi, is parking available?", "shadi ke liye 17 feb ko hall chahiye") beats a plain greeting.
+    $sense = $id === '' && $type === 'text' && !$switch ? wa_bot_understand($text) : ['any' => false];
+    $greeting = $switch || (!$sense['any'] && preg_match('/^\s*(hi+|hello|helo|hey|hlo|namaste|namaskar|ram ram|menu|start|good (morning|afternoon|evening)|gm|हाय|हॅलो|हेलो|नमस्ते|नमस्कार|राम राम|मेनू|शुभ प्रभात|सुप्रभात|गुड मॉर्निंग)(?=[\s.,!?🙏]|$)/iu', $text));
     if ($state['step'] === 'optout' && !$greeting && $id === '') return;
     $handedOver = $state['step'] === 'team' && $state['age'] < WA_BOT_STAFF_PAUSE;
     if ($state['age'] > 7200 && !$handedOver) $state = ['step' => '', 'data' => [], 'age' => 0];
@@ -400,8 +489,20 @@ function wa_bot_reply(PDO $db, array $config, array $wa, string $phone, string $
         if ($state['step'] === 'date') { wa_bot_take_date($db, $config, $wa, $phone, $name, $lang, $state['data'], $text, $type); return; }
         // Staff are chatting with this guest: stay quiet.
         if (wa_bot_staff_active($db, $phone)) return;
-        if ($topic !== '') { wa_bot_faq($db, $wa, $phone, $lang, $topic); return; }
         if (in_array($type, ['reaction', 'sticker', 'unsupported', 'system'], true)) return;
+        if ($type === 'text' && preg_match(WA_BOT_WRONG, $text)) { wa_bot_save($db, $phone, 'optout'); wa_bot_text($db, $wa, $phone, wa_bot_t($lang, 'wrong')); return; }
+        if ($sense['any']) {
+            // Asked for a person, or about an existing booking (cancel, status, refund): the team takes it.
+            if ($sense['call'] || $sense['staff']) { wa_bot_callback($db, $config, $wa, $phone, $name, $lang, $state['data'], $text, true); return; }
+            if ($sense['faq']) { wa_bot_faq($db, $wa, $phone, $lang, $sense['faq']); return; }
+            $booking = $sense['book'] || isset($sense['preset']['event_i']) || isset($sense['preset']['hall']);
+            if ($sense['date'] !== '' && !$booking) { wa_bot_date_check($db, $wa, $phone, $lang, $sense['date']); return; }
+            if ($booking) { wa_bot_start_booking($db, $config, $wa, $phone, $name, $lang, $sense['preset']); return; }
+        }
+        if ($type === 'text' && preg_match(WA_BOT_AVAIL_RE, $text) && $state['step'] !== 'callask') {
+            wa_bot_buttons($db, $wa, $phone, wa_bot_t($lang, 'which_hall'), ['d:big' => '🏛️ ' . wa_bot_hall($lang, 'big'), 'd:small' => '🏠 ' . wa_bot_hall($lang, 'small') . ' (≤350)']);
+            return;
+        }
         // The team already has this guest: a short, occasional reminder that a call is coming.
         if ($handedOver) {
             if ($state['age'] > 1800) {
@@ -415,6 +516,12 @@ function wa_bot_reply(PDO $db, array $config, array $wa, string $phone, string $
             if (preg_match(WA_BOT_NO, $text)) { wa_bot_call_no($db, $wa, $phone, $lang); return; }
             // "Yes", or a second message the bot cannot follow: the guest needs a person.
             wa_bot_callback($db, $config, $wa, $phone, $name, $lang, $state['data'], $text);
+            return;
+        }
+        // "ok", "hmm", 👍 and the like: a gentle menu, not a question.
+        if ($type === 'text' && preg_match(WA_BOT_NEUTRAL, $text)) {
+            wa_bot_save($db, $phone, 'menu');
+            wa_bot_buttons($db, $wa, $phone, wa_bot_t($lang, 'help'), wa_bot_main_buttons($lang));
             return;
         }
         // Not understood (text, voice note, photo...): offer a call with a simple yes/no instead of going silent.
@@ -435,13 +542,10 @@ function wa_bot_reply(PDO $db, array $config, array $wa, string $phone, string $
             if ($a === 'dates') {
                 wa_bot_buttons($db, $wa, $phone, wa_bot_t($lang, 'which_hall'), ['d:big' => '🏛️ ' . wa_bot_hall($lang, 'big'), 'd:small' => '🏠 ' . wa_bot_hall($lang, 'small') . ' (≤350)']);
             } elseif ($a === 'book') {
-                wa_bot_save($db, $phone, 'book');
-                $rows = [];
-                foreach (array_keys(WA_BOT_EVENTS) as $i) $rows['be:' . $i] = wa_bot_event($lang, $i);
-                wa_bot_list($db, $wa, $phone, wa_bot_t($lang, 'step1'), wa_bot_t($lang, 'choose_event'), $rows);
+                wa_bot_start_booking($db, $config, $wa, $phone, $name, $lang, []);
             } elseif ($a === 'info') {
                 $rows = [];
-                foreach (WA_BOT_FAQ as $key => [, $titles]) $rows['i:' . $key] = $titles[wa_bot_lang_index($lang)];
+                foreach (WA_BOT_FAQ as $key => [, $titles]) if ($key !== 'photos') $rows['i:' . $key] = $titles[wa_bot_lang_index($lang)];
                 wa_bot_list($db, $wa, $phone, wa_bot_t($lang, 'info_title'), wa_bot_t($lang, 'choose_topic'), $rows + ['m:team' => wa_bot_t($lang, 'btn_team')]);
             } elseif ($a === 'team') {
                 wa_bot_callback($db, $config, $wa, $phone, $name, $lang, $data, '', true);
@@ -466,13 +570,17 @@ function wa_bot_reply(PDO $db, array $config, array $wa, string $phone, string $
             return;
         case 'be':
             if (!isset(WA_BOT_EVENTS[(int) $a])) return;
-            wa_bot_save($db, $phone, 'book', ['event' => WA_BOT_EVENTS[(int) $a], 'event_i' => (int) $a]);
-            wa_bot_buttons($db, $wa, $phone, wa_bot_t($lang, 'step2'), ['bh:big' => '🏛️ ' . wa_bot_hall($lang, 'big'), 'bh:small' => '🏠 ' . wa_bot_hall($lang, 'small')]);
+            $keep = $state['step'] === 'book' ? array_intersect_key($data, ['hall' => 1, 'date' => 1, 'guests' => 1]) : [];
+            wa_bot_start_booking($db, $config, $wa, $phone, $name, $lang, ['event_i' => (int) $a] + $keep);
             return;
         case 'bh':
-            if (!isset(WA_BOT_HALLS[$a]) || empty($data['event'])) { wa_bot_menu($db, $wa, $phone, $name, $lang, wa_bot_t($lang, 'restart')); return; }
-            wa_bot_save($db, $phone, 'date', $data + ['hall' => $a]);
-            wa_bot_text($db, $wa, $phone, wa_bot_t($lang, 'step3'));
+            if (!isset(WA_BOT_HALLS[$a])) return;
+            $keep = $state['step'] === 'book' ? array_intersect_key($data, ['event_i' => 1, 'date' => 1, 'guests' => 1]) : [];
+            wa_bot_start_booking($db, $config, $wa, $phone, $name, $lang, ['hall' => $a] + $keep);
+            return;
+        case 'bd':
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $a) || !booking_valid_date($a)) { wa_bot_start_booking($db, $config, $wa, $phone, $name, $lang, []); return; }
+            wa_bot_start_booking($db, $config, $wa, $phone, $name, $lang, ['date' => $a]);
             return;
         case 'bg':
             // Optional detail after the enquiry is already saved and the team alerted.
@@ -536,6 +644,63 @@ function wa_bot_callback(PDO $db, array $config, array $wa, string $phone, strin
     if ($alert) lead_notify($db, $config, $alert);
 }
 
+/** Starts (or continues) the booking form with whatever the guest already told us: event_i, hall, date, guests. */
+function wa_bot_start_booking(PDO $db, array $config, array $wa, string $phone, string $name, string $lang, array $data): void
+{
+    if (!isset($data['event_i'], WA_BOT_EVENTS[$data['event_i']])) {
+        unset($data['event_i']);
+        wa_bot_save($db, $phone, 'book', $data);
+        $rows = [];
+        foreach (array_keys(WA_BOT_EVENTS) as $i) $rows['be:' . $i] = wa_bot_event($lang, $i);
+        wa_bot_list($db, $wa, $phone, wa_bot_t($lang, 'step1'), wa_bot_t($lang, 'choose_event'), $rows);
+        return;
+    }
+    $data['event'] = WA_BOT_EVENTS[$data['event_i']];
+    if (!isset($data['hall'], WA_BOT_HALLS[$data['hall']])) {
+        unset($data['hall']);
+        wa_bot_save($db, $phone, 'book', $data);
+        wa_bot_buttons($db, $wa, $phone, wa_bot_t($lang, 'step2'), ['bh:big' => '🏛️ ' . wa_bot_hall($lang, 'big'), 'bh:small' => '🏠 ' . wa_bot_hall($lang, 'small')]);
+        return;
+    }
+    if (empty($data['date'])) {
+        wa_bot_save($db, $phone, 'date', $data);
+        wa_bot_text($db, $wa, $phone, wa_bot_t($lang, 'step3'));
+        return;
+    }
+    $date = (string) $data['date'];
+    unset($data['date']);
+    wa_bot_book_date($db, $config, $wa, $phone, $name, $lang, $data, $date);
+}
+
+/** A free date becomes an enquiry with a team alert; a taken one asks for another date. */
+function wa_bot_book_date(PDO $db, array $config, array $wa, string $phone, string $name, string $lang, array $data, string $date): void
+{
+    $check = $db->prepare('SELECT 1 FROM bookings WHERE booked_date = ? AND hall = ? LIMIT 1');
+    $check->execute([$date, $data['hall']]);
+    if ($check->fetchColumn()) {
+        wa_bot_save($db, $phone, 'date', $data);
+        wa_bot_text($db, $wa, $phone, wa_bot_t($lang, 'booked', ['hall' => wa_bot_hall($lang, $data['hall']), 'date' => wa_bot_date($lang, $date)]));
+        return;
+    }
+    // The date is free: save the enquiry and alert the sales team now; the guest count is asked after, optionally.
+    wa_bot_create_enquiry($db, $config, $wa, $phone, $name, $lang, $data + ['date' => $date]);
+}
+
+/** "Is 17 Feb free?" without a booking request: both halls' status for that date. */
+function wa_bot_date_check(PDO $db, array $wa, string $phone, string $lang, string $date): void
+{
+    $query = $db->prepare('SELECT hall FROM bookings WHERE booked_date = ?');
+    $query->execute([$date]);
+    $taken = array_flip(array_map('strval', $query->fetchAll(PDO::FETCH_COLUMN)));
+    $status = static fn(string $hall) => wa_bot_t($lang, isset($taken[$hall]) ? 'is_booked' : 'is_free');
+    wa_bot_save($db, $phone, 'menu');
+    $body = wa_bot_t($lang, 'date_check', ['date' => wa_bot_date($lang, $date), 'bighall' => wa_bot_hall($lang, 'big'), 'smallhall' => wa_bot_hall($lang, 'small'), 'big' => $status('big'), 'small' => $status('small')]);
+    $free = !isset($taken['big']) || !isset($taken['small']);
+    wa_bot_buttons($db, $wa, $phone, $body, $free
+        ? ['bd:' . $date => wa_bot_t($lang, 'btn_book_this'), 'm:dates' => wa_bot_t($lang, 'btn_other_dates'), 'm:menu' => wa_bot_t($lang, 'btn_menu')]
+        : ['m:dates' => wa_bot_t($lang, 'btn_other_dates'), 'm:team' => wa_bot_t($lang, 'btn_team'), 'm:menu' => wa_bot_t($lang, 'btn_menu')]);
+}
+
 function wa_bot_take_date(PDO $db, array $config, array $wa, string $phone, string $name, string $lang, array $data, string $text, string $type = 'text'): void
 {
     if (empty($data['event']) || !isset(WA_BOT_HALLS[$data['hall'] ?? ''])) { wa_bot_menu($db, $wa, $phone, $name, $lang, wa_bot_t($lang, 'restart')); return; }
@@ -547,14 +712,7 @@ function wa_bot_take_date(PDO $db, array $config, array $wa, string $phone, stri
         wa_bot_buttons($db, $wa, $phone, wa_bot_t($lang, 'bad_date'), ['c:yes' => wa_bot_t($lang, 'btn_yes_call'), 'm:menu' => wa_bot_t($lang, 'btn_menu')]);
         return;
     }
-    $check = $db->prepare('SELECT 1 FROM bookings WHERE booked_date = ? AND hall = ? LIMIT 1');
-    $check->execute([$date, $data['hall']]);
-    if ($check->fetchColumn()) {
-        wa_bot_text($db, $wa, $phone, wa_bot_t($lang, 'booked', ['hall' => wa_bot_hall($lang, $data['hall']), 'date' => wa_bot_date($lang, $date)]));
-        return;
-    }
-    // The date is free: save the enquiry and alert the sales team now; the guest count is asked after, optionally.
-    wa_bot_create_enquiry($db, $config, $wa, $phone, $name, $lang, $data + ['date' => $date]);
+    wa_bot_book_date($db, $config, $wa, $phone, $name, $lang, $data, $date);
 }
 
 function wa_bot_create_enquiry(PDO $db, array $config, array $wa, string $phone, string $name, string $lang, array $data): void
