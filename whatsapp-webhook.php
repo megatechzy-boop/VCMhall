@@ -60,7 +60,7 @@ try {
             }
         }
     } else {
-        wa_handle_webhook($db, $payload, $wa['phone_id']);
+        wa_handle_webhook($db, $payload, $wa['phone_id'], $newMessages);
         foreach ($payload['entry'] ?? [] as $entry) {
             foreach ($entry['changes'] ?? [] as $change) {
                 if (($change['field'] ?? '') === 'message_template_status_update') wa_template_status_event($db, (array) ($change['value'] ?? []));
@@ -74,9 +74,13 @@ try {
     exit('Error');
 }
 echo 'OK';
+// Reply to Meta first; auto-replies, fetching each lead and sending alerts can take several seconds.
+if ($leadgen || !empty($newMessages)) lead_finish_response();
+if (!empty($newMessages)) {
+    require_once __DIR__ . '/server-patch/whatsapp-bot.php';
+    wa_bot_handle($db, $config, $wa, $newMessages);
+}
 if ($leadgen) {
-    // Reply to Meta first; fetching each lead and sending alerts can take several seconds.
-    lead_finish_response();
     foreach ($leadgen as $value) {
         try {
             meta_handle_leadgen($db, $config, $value);

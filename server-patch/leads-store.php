@@ -124,7 +124,8 @@ function lead_notify(PDO $db, array $config, array $lead): void
     $waReady = $wa['token'] !== '' && $wa['phone_id'] !== '';
     $jobs = [];
 
-    if (lead_setting_on($db, 'lead_customer_whatsapp')) $jobs[] = ['customer', 'whatsapp', $lead['phone'] ?? ''];
+    // A WhatsApp lead is already chatting with the assistant, so it gets no extra template.
+    if (lead_setting_on($db, 'lead_customer_whatsapp') && ($lead['source'] ?? '') !== 'whatsapp') $jobs[] = ['customer', 'whatsapp', $lead['phone'] ?? ''];
     if (lead_setting_on($db, 'lead_customer_email')) $jobs[] = ['customer', 'email', $lead['email'] ?? ''];
     $team = $db->query('SELECT name, phone, email, notify_whatsapp, notify_email FROM lead_recipients WHERE active = 1 ORDER BY id')->fetchAll();
     foreach ($team as $member) {

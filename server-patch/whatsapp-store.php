@@ -177,9 +177,10 @@ function wa_message_content(array $m): array
     }
 }
 
-/** Stores messages and delivery statuses from a verified webhook payload. Returns stored message count. */
-function wa_handle_webhook(PDO $db, array $payload, string $phoneNumberId): int
+/** Stores messages and delivery statuses from a verified webhook payload. Returns stored message count; $new receives each newly stored guest message. */
+function wa_handle_webhook(PDO $db, array $payload, string $phoneNumberId, ?array &$new = null): int
 {
+    $new = [];
     wa_ensure_schema($db);
     $ignore = $db->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite' ? 'INSERT OR IGNORE' : 'INSERT IGNORE';
     $insert = $db->prepare("$ignore INTO wa_messages (wa_id, phone, contact_name, direction, msg_type, body, media_id, media_mime, sent_at) VALUES (?, ?, ?, 'in', ?, ?, ?, ?, ?)");
@@ -200,7 +201,7 @@ function wa_handle_webhook(PDO $db, array $payload, string $phoneNumberId): int
                 [$type, $body, $mediaId, $mime] = wa_message_content($m);
                 $time = isset($m['timestamp']) && ctype_digit((string) $m['timestamp']) ? date('Y-m-d H:i:s', (int) $m['timestamp']) : wa_now();
                 $insert->execute([mb_substr($waId, 0, 191), $phone, ($names[$phone] ?? '') ?: null, mb_substr($type, 0, 20), mb_substr($body, 0, 4096), $mediaId, $mime ? mb_substr($mime, 0, 100) : null, $time]);
-                $stored += $insert->rowCount();
+                if ($insert->rowCount()) { $stored++; $new[] = ['phone' => $phone, 'name' => $names[$phone] ?? '', 'message' => $m]; }
             }
             foreach ($value['statuses'] ?? [] as $s) {
                 wa_update_status($db, (string) ($s['id'] ?? ''), (string) ($s['status'] ?? ''), (string) ($s['errors'][0]['title'] ?? ''));
