@@ -15,7 +15,7 @@ const WA_BOT_MAP = 'https://www.google.com/maps/search/?api=1&query=Late+Venutai
 // Order matters for typed questions: the first matching topic answers.
 const WA_BOT_FAQ = [
     'capacity' => ['👥 Capacity', '/capacity|how many (guests|people)|kitne log|kitne guest|seating|crowd|क्षमता|किती लोक/iu',
-        "👥 Capacity\n🏛️ Big Hall: up to 1,200 guests\n🏠 Small Hall: up to 350 guests\n🍽️ Dining Hall: 400 at a time\n⭐ VIP A/C Dining: 50 at a time"],
+        "👥 Capacity\n\n🏛️ Big Hall: up to 1,200 guests\n   🍽️ Dining: 400 at a time\n   ⭐ VIP A/C Dining: 50 at a time\n\n🏠 Small Hall: up to 350 guests\n   🍽️ Dining: 50 at a time"],
     'price' => ['💰 Rates / price', '/price|\brates?\b|\bcost|charges?\b|\brent\b|kitna|kitne ka|\bfees?\b|package|quot|budget|भाड|किंमत|पैसे|किराया|कितना/iu',
         "💰 Rates depend on the hall, the date and the package, so they are not fixed online.\n\nTap 📞 Talk to team for a quick quote, or 📝 Book / Enquire and our team will call you with the best rate."],
     'visit' => ['👀 Visit the hall', '/visit|dekhn|dikha|see the hall|show the hall|बघाय|पहाय|देखन/iu',
@@ -23,7 +23,7 @@ const WA_BOT_FAQ = [
     'location' => ['📍 Location / address', '/address|location|where|kaha|kidhar|\bmap\b|direction|reach|पत्ता|कुठे|कहाँ|कहां/iu',
         "📍 " . WA_BOT_ADDRESS . "\n\nGoogle Maps: " . WA_BOT_MAP],
     'catering' => ['🍽️ Food / catering', '/cater|food|khana|jevan|lunch|dinner|halwai|menu card|जेवण|खाना|आचारी/iu',
-        "🍽️ You can bring your own caterer – catering support is available.\nDining Hall: 400 at a time · VIP A/C Dining: 50 at a time.\n\nPlease confirm current arrangements with our team."],
+        "🍽️ You can bring your own caterer – catering support is available.\nBig Hall dining: 400 at a time · VIP A/C Dining: 50 · Small Hall dining: 50 at a time.\n\nPlease confirm current arrangements with our team."],
     'rooms' => ['🛏️ Guest rooms', '/room|stay|accommodation|रूम|खोली/iu',
         "🛏️ Up to 8 air-conditioned guest rooms are available at the venue.\nPlease confirm availability for your date with our team."],
     'facilities' => ['🎤 Facilities / A/C', '/\bac\b|a\/c|air.?condition|sound|speaker|\bdj\b|\bmic\b|projector|\bled\b|screen|wi-?fi|facilit|सुविधा/iu',
