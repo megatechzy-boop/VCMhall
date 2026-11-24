@@ -38,6 +38,7 @@ function retention_run(PDO $db, bool $apply, ?DateTimeImmutable $now = null): ar
         'alert_logs' => ['lead_notifications', 'created_at', $cutoff],
         'meta_leads' => ['meta_leads', 'created_at', $cutoff],
         'bot_state' => ['wa_bot_state', 'updated_at', $now->modify('-' . RETENTION_MONTHS . ' months')->getTimestamp()],
+        'bot_language' => ['wa_bot_lang', 'updated_at', $now->modify('-' . RETENTION_MONTHS . ' months')->getTimestamp()],
         'rate_limit_hits' => ['rate_hits', 'created_at', $now->modify('-30 days')->getTimestamp()],
     ];
     $params = [];
