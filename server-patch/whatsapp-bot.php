@@ -25,7 +25,9 @@ const WA_BOT_MONTHS = [
 ];
 const WA_BOT_STAFF_PAUSE = 43200; // seconds the bot stays in the background after staff write or the guest asks for the team
 const WA_BOT_ADDRESS = "Late Venutai Chavan Multipurpose Hall\nYashwantrao Chavan Smarak, Sector 27A, Pradhikaran, Nigdi, Pune 411044";
-const WA_BOT_MAP = 'https://www.google.com/maps/search/?api=1&query=Late+Venutai+Chavan+Multipurpose+Hall+Nigdi+Pune';
+const WA_BOT_MAP = 'https://share.google/urV9xBR8XqT2aH8nh'; // the hall's Google listing (map, photos, reviews)
+const WA_BOT_SITE = 'https://venutaihall.com/';
+const WA_BOT_PIN = ['latitude' => 18.651293965168612, 'longitude' => 73.77019107492065]; // from the website's map embed
 
 // Every guest-facing sentence: key => [en, hi, mr]. {placeholders} are filled by wa_bot_t().
 const WA_BOT_TEXT = [
@@ -87,9 +89,11 @@ const WA_BOT_FAQ = [
         ["👥 Capacity\n\n🏛️ Big Hall: up to 1,200 guests\n   🍽️ Dining: 400 at a time\n   ⭐ VIP A/C Dining: 50 at a time\n\n🏠 Small Hall: up to 350 guests\n   🍽️ Dining: 50 at a time",
          "👥 क्षमता\n\n🏛️ बड़ा हॉल: 1,200 मेहमानों तक\n   🍽️ डाइनिंग: एक बार में 400\n   ⭐ VIP A/C डाइनिंग: एक बार में 50\n\n🏠 छोटा हॉल: 350 मेहमानों तक\n   🍽️ डाइनिंग: एक बार में 50",
          "👥 क्षमता\n\n🏛️ मोठा हॉल: 1,200 पाहुण्यांपर्यंत\n   🍽️ डायनिंग: एका वेळी 400\n   ⭐ VIP A/C डायनिंग: एका वेळी 50\n\n🏠 छोटा हॉल: 350 पाहुण्यांपर्यंत\n   🍽️ डायनिंग: एका वेळी 50"]],
-    'location' => ['/address|location|where|kaha|kidhar|kuthe|\bmap\b|direction|reach|\bdoor\b|\bdur\b|distance|station|\bbus\b|metro|railway|kaise aa|kase ya|route|दूर|स्टेशन|बस|पत्ता|कुठे|कहाँ|कहां|लोकेशन|पता/iu',
+    'location' => ['/address|location|where|website|web ?site|site|link|वेबसाइट|लिंक|kaha|kidhar|kuthe|\bmap\b|direction|reach|\bdoor\b|\bdur\b|distance|station|\bbus\b|metro|railway|kaise aa|kase ya|route|दूर|स्टेशन|बस|पत्ता|कुठे|कहाँ|कहां|लोकेशन|पता/iu',
         ['📍 Location / address', '📍 पता / लोकेशन', '📍 पत्ता / लोकेशन'],
-        ["📍 " . WA_BOT_ADDRESS . "\n\nGoogle Maps: " . WA_BOT_MAP, "📍 पता:\n" . WA_BOT_ADDRESS . "\n\nGoogle Maps: " . WA_BOT_MAP, "📍 पत्ता:\n" . WA_BOT_ADDRESS . "\n\nGoogle Maps: " . WA_BOT_MAP]],
+        ["📍 " . WA_BOT_ADDRESS . "\nNext to Sant Tukaram Udyan, Pradhikaran.\n\n🗺️ Google: " . WA_BOT_MAP . "\n🌐 Website: " . WA_BOT_SITE,
+         "📍 पता:\n" . WA_BOT_ADDRESS . "\nसंत तुकाराम उद्यान के पास, प्राधिकरण।\n\n🗺️ Google: " . WA_BOT_MAP . "\n🌐 वेबसाइट: " . WA_BOT_SITE,
+         "📍 पत्ता:\n" . WA_BOT_ADDRESS . "\nसंत तुकाराम उद्यानाजवळ, प्राधिकरण.\n\n🗺️ Google: " . WA_BOT_MAP . "\n🌐 वेबसाइट: " . WA_BOT_SITE]],
     'price' => ['/price|\brates?\b|\bcost|charges?\b|\brent\b|kitna|kitne ka|kiti paise|bhad|kiraya|how much|deposit|advance|payment|\bpay\b|\bupi\b|\bgst\b|पेमेंट|\bfees?\b|package|quot|budget|भाड|किंमत|पैसे|किराया|कितना|खर्च|रेट|दर किती/iu',
         ['💰 Rates / price', '💰 रेट / कीमत', '💰 दर / किंमत'],
         ["💰 Rates depend on the hall, the date and the package, so they are not fixed online.\n\nTap 📞 Talk to team for a quick quote, or 📝 Book / Enquire and our team will call you with the best rate.",
@@ -262,6 +266,10 @@ function wa_bot_faq(PDO $db, array $wa, string $phone, string $lang, string|arra
 {
     $answers = array_map(static fn($key) => WA_BOT_FAQ[$key][2][wa_bot_lang_index($lang)], (array) $keys);
     wa_bot_save($db, $phone, 'menu');
+    // A tappable map pin first, then the address with the Google and website links.
+    if (in_array('location', (array) $keys, true)) {
+        wa_deliver($db, $wa, $phone, ['type' => 'location', 'location' => WA_BOT_PIN + ['name' => 'Late Venutai Chavan Multipurpose Hall', 'address' => str_replace("\n", ', ', WA_BOT_ADDRESS)]], 'text', '📍 Location pin', 'bot');
+    }
     wa_bot_buttons($db, $wa, $phone, mb_substr(implode("\n\n━━━━━━━━\n\n", $answers), 0, 1000), ['m:book' => wa_bot_t($lang, 'btn_book'), 'm:info' => wa_bot_t($lang, 'btn_more'), 'm:team' => wa_bot_t($lang, 'btn_team')]);
 }
 
