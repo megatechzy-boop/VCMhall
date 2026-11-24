@@ -503,7 +503,8 @@ function wa_bot_reply(PDO $db, array $config, array $wa, string $phone, string $
             // Asked for a person, or about an existing booking (cancel, status, refund): the team takes it.
             if ($sense['call'] || $sense['staff']) { wa_bot_callback($db, $config, $wa, $phone, $name, $lang, $state['data'], $text, true); return; }
             if ($sense['faq']) { wa_bot_faq($db, $wa, $phone, $lang, $sense['faq']); return; }
-            $booking = $sense['book'] || isset($sense['preset']['event_i']) || isset($sense['preset']['hall']);
+            // "Is the big hall available on 15 Jan?" is a question, not yet a booking.
+            $booking = $sense['book'] || isset($sense['preset']['event_i']) || (isset($sense['preset']['hall']) && !$sense['avail']);
             if ($sense['date'] !== '' && !$booking) { wa_bot_date_check($db, $wa, $phone, $lang, $sense['date']); return; }
             if ($booking) { wa_bot_start_booking($db, $config, $wa, $phone, $name, $lang, $sense['preset']); return; }
         }
@@ -655,6 +656,12 @@ function wa_bot_callback(PDO $db, array $config, array $wa, string $phone, strin
 /** Starts (or continues) the booking form with whatever the guest already told us: event_i, hall, date, guests. */
 function wa_bot_start_booking(PDO $db, array $config, array $wa, string $phone, string $name, string $lang, array $data): void
 {
+    // A date that is already taken for every hall the guest could mean: say so now, before asking anything.
+    if (!empty($data['date']) && !isset($data['event_i'], $data['hall'])) {
+        $taken = wa_bot_taken($db, (string) $data['date']);
+        $halls = isset($data['hall'], WA_BOT_HALLS[$data['hall']]) ? [$data['hall']] : array_keys(WA_BOT_HALLS);
+        if (!array_diff($halls, array_keys($taken))) { wa_bot_date_check($db, $wa, $phone, $lang, (string) $data['date']); return; }
+    }
     if (!isset($data['event_i'], WA_BOT_EVENTS[$data['event_i']])) {
         unset($data['event_i']);
         wa_bot_save($db, $phone, 'book', $data);
@@ -667,7 +674,14 @@ function wa_bot_start_booking(PDO $db, array $config, array $wa, string $phone, 
     if (!isset($data['hall'], WA_BOT_HALLS[$data['hall']])) {
         unset($data['hall']);
         wa_bot_save($db, $phone, 'book', $data);
-        wa_bot_buttons($db, $wa, $phone, wa_bot_t($lang, 'step2'), ['bh:big' => '🏛️ ' . wa_bot_hall($lang, 'big'), 'bh:small' => '🏠 ' . wa_bot_hall($lang, 'small')]);
+        // With the date known, show which hall is still free on it.
+        $note = '';
+        if (!empty($data['date'])) {
+            $taken = wa_bot_taken($db, (string) $data['date']);
+            $note = "\n\n📅 " . wa_bot_date($lang, (string) $data['date']);
+            foreach (['big' => '🏛️', 'small' => '🏠'] as $hall => $icon) $note .= "\n{$icon} " . wa_bot_hall($lang, $hall) . ': ' . wa_bot_t($lang, isset($taken[$hall]) ? 'is_booked' : 'is_free');
+        }
+        wa_bot_buttons($db, $wa, $phone, wa_bot_t($lang, 'step2') . $note, ['bh:big' => '🏛️ ' . wa_bot_hall($lang, 'big'), 'bh:small' => '🏠 ' . wa_bot_hall($lang, 'small')]);
         return;
     }
     if (empty($data['date'])) {
@@ -695,11 +709,17 @@ function wa_bot_book_date(PDO $db, array $config, array $wa, string $phone, stri
 }
 
 /** "Is 17 Feb free?" without a booking request: both halls' status for that date. */
-function wa_bot_date_check(PDO $db, array $wa, string $phone, string $lang, string $date): void
+/** Halls already taken on a date: ['big' => 0, ...]. */
+function wa_bot_taken(PDO $db, string $date): array
 {
     $query = $db->prepare('SELECT hall FROM bookings WHERE booked_date = ?');
     $query->execute([$date]);
-    $taken = array_flip(array_map('strval', $query->fetchAll(PDO::FETCH_COLUMN)));
+    return array_flip(array_map('strval', $query->fetchAll(PDO::FETCH_COLUMN)));
+}
+
+function wa_bot_date_check(PDO $db, array $wa, string $phone, string $lang, string $date): void
+{
+    $taken = wa_bot_taken($db, $date);
     $status = static fn(string $hall) => wa_bot_t($lang, isset($taken[$hall]) ? 'is_booked' : 'is_free');
     wa_bot_save($db, $phone, 'menu');
     $body = wa_bot_t($lang, 'date_check', ['date' => wa_bot_date($lang, $date), 'bighall' => wa_bot_hall($lang, 'big'), 'smallhall' => wa_bot_hall($lang, 'small'), 'big' => $status('big'), 'small' => $status('small')]);
