@@ -1,6 +1,15 @@
 <?php
 declare(strict_types=1);
 
+// Never send PHP errors to Meta; log them outside public_html instead.
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+ini_set('error_log', dirname(__DIR__) . '/wa-webhook.log');
+// shortcut: temporary delivery trace, remove once the WhatsApp bot is confirmed working
+register_shutdown_function(static function (): void {
+    error_log(sprintf('hit %s %d %s', $_SERVER['REQUEST_METHOD'] ?? '-', http_response_code(), json_encode(error_get_last())));
+});
+
 // Meta webhook for the WhatsApp Business Account (messages, template status) and the
 // Facebook Page (Lead Ads leadgen): verification handshake (GET) and events (POST).
 $store = __DIR__ . '/booking-store.php';
