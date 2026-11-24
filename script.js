@@ -92,7 +92,7 @@
     ],
     small: [
       { label: 'Full A/C Hall', num: '350', cap: 'up to · guests' },
-      { label: 'A/C Dining', num: '50', cap: 'at a time' },
+      { label: 'Small Hall Dining', num: '50', cap: 'at a time' },
     ],
   };
 

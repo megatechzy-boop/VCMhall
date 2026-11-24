@@ -973,7 +973,7 @@ events_main = f"""
 
 FACILITY_GROUPS = [
     ("i-ac", "Comfort", ["Fully air-conditioned halls", "A/C guest rooms", "Clean washrooms", "Lobby &amp; waiting area", "Lift access"]),
-    ("i-dining", "Dining", ["Dining Hall — 400 at a time", "VIP A/C Dining — 50 at a time", "Catering support for your caterer"]),
+    ("i-dining", "Dining", ["Big Hall Dining — 400 at a time", "VIP A/C Dining — 50 at a time", "Small Hall Dining — 50 at a time", "Catering support for your caterer"]),
     ("i-projector", "Event Technology", ["Acoustic system", "LED screen", "Projector", "Wi-Fi connectivity"]),
     ("i-shield", "Safety &amp; Access", ["CCTV surveillance", "Fire alarm system", "Easy access in Nigdi Pradhikaran"]),
 ]
@@ -1080,7 +1080,7 @@ facilities_main = f"""
               <div class="media-frame">{pic("dining-hall.jpg", "Dining hall arranged with round tables")}</div>
               <div class="setup-card-body">
                 <h3>Dining Setup</h3>
-                <p>Round-table seating for 400 at a time in the Dining Hall, or private service in VIP A/C Dining for 50 at a time.</p>
+                <p>Round-table seating for 400 at a time in the Dining Hall, or private service in VIP A/C Dining for 50 at a time. The Small Hall has its own dining for 50 at a time.</p>
                 <p class="setup-note">Ask about catering support for your caterer.</p>
                 <a class="text-link" href="dining-hall">Explore dining {icon("i-arrow")}</a>
               </div>
@@ -1541,7 +1541,7 @@ terms_body = """
             <p>Forms on this site — including Check Availability — send an enquiry only. An enquiry does not reserve a date, hall or room. Your date is confirmed only after the venue team confirms it with you.</p>
             <p>For current availability, policies and arrangements, contact the venue team directly on 9359567494.</p>
             <h2>Information on this site</h2>
-            <p>We aim to keep details about spaces, capacities, facilities and opening hours accurate. Capacities (Big Hall up to 1200, Small Hall up to 350, Dining Hall up to 400, VIP A/C Dining up to 50, up to 8 guest rooms) are as listed by the venue. Layouts, availability and arrangements for a specific date are confirmed with the team when you enquire.</p>
+            <p>We aim to keep details about spaces, capacities, facilities and opening hours accurate. Capacities (Big Hall up to 1200, Small Hall up to 350, Dining Hall up to 400, VIP A/C Dining up to 50, Small Hall dining up to 50, up to 8 guest rooms) are as listed by the venue. Layouts, availability and arrangements for a specific date are confirmed with the team when you enquire.</p>
             <p>Pricing is not published on this site — enquire for pricing.</p>
             <h2>Acceptable use</h2>
             <p>Please do not misuse the site — for example, by submitting false or spam enquiries, attempting to disrupt the site, or copying content for commercial use without permission.</p>
@@ -1696,7 +1696,7 @@ def details_main():
             <p><strong>Reception Setup</strong> — Welcome seating, stage moments and a separate dining room so guests can move between programme and meal.</p>
             <p><strong>Corporate Setup</strong> — Rows or clusters with LED screen, projector and acoustic system for presentations and annual functions.</p>
             <p><strong>Family Function Setup</strong> — Flexible seating for anniversaries, naming ceremonies and get-togethers, scaled to your guest list.</p>
-            <p><strong>Dining Setup</strong> — Round-table seating for 400 at a time in the Dining Hall, or private service in VIP A/C Dining for 50 at a time.</p>
+            <p><strong>Dining Setup</strong> — Round-table seating for 400 at a time in the Dining Hall, or private service in VIP A/C Dining for 50 at a time. The Small Hall has its own dining for 50 at a time.</p>
 
             <h2 id="heritage">Our namesake</h2>
             <p>This multipurpose hall carries the name of Late Venutai Chavan — a life dedicated to the service of society, and to bringing people together.</p>
@@ -1726,7 +1726,7 @@ everything_included_main = f"""
           <div class="section-head reveal"><div><p class="eyebrow">Package</p><h2 id="ei-big">Big <em>Hall</em></h2></div><a class="text-link" href="big-hall">Big Hall page {icon("i-arrow")}</a></div>
           <div class="facility-bullets">
             <div class="facility-bullet-group reveal"><h3>Specialities</h3><ul><li>Fully Air-Conditioned Hall</li><li>Seating Capacity: Up to 1,200 People</li><li>Catering Facility Available</li><li>Fully Equipped with an Acoustic System</li><li>8 A/C Guest Rooms Available for Guest Accommodation</li><li>The Entire Building is Equipped with a Fire-Fighting System</li><li>4-Wheeler &amp; 2-Wheeler Parking Available</li><li>LED Screen &amp; Projector Available</li><li>CCTV Surveillance — The Entire Building is Under CCTV Surveillance</li></ul></div>
-            <div class="facility-bullet-group reveal reveal-delay-1"><h3>Dining</h3><ul><li>Dining Hall — Seating Capacity: Up to 400 People at a Time</li><li>VIP A/C Dining Hall — Seating Capacity: Up to 50 People at a Time</li></ul></div>
+            <div class="facility-bullet-group reveal reveal-delay-1"><h3>Dining</h3><ul><li>Dining Hall (Big Hall) — Seating Capacity: Up to 400 People at a Time</li><li>VIP A/C Dining Hall (Big Hall) — Seating Capacity: Up to 50 People at a Time</li><li>Small Hall Dining — Seating Capacity: Up to 50 People at a Time</li></ul></div>
           </div>
         </div>
       </section>
