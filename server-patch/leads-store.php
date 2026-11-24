@@ -89,7 +89,7 @@ function lead_render(string $body, array $params): string
 function lead_email_text(string $audience, array $lead, PDO $db): array
 {
     $venue = 'Late Venutai Chavan Multipurpose Hall';
-    $phone = booking_setting($db, 'venue_phone', '9359567494');
+    $phone = booking_setting($db, 'venue_phone', '') ?: '9359567494';
     if ($audience === 'customer') {
         return [
             'We received your enquiry – ' . $venue,

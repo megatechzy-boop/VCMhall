@@ -9,6 +9,44 @@ const WA_BOT_EVENTS = ['Wedding', 'Engagement', 'Reception', 'Birthday', 'Naming
 const WA_BOT_HALLS = ['big' => 'Big Hall', 'small' => 'Small Hall'];
 const WA_BOT_GUESTS = [50 => 'Up to 50', 100 => 'Up to 100', 200 => 'Up to 200', 350 => 'Up to 350', 500 => 'Up to 500', 800 => '500 or more'];
 const WA_BOT_STAFF_PAUSE = 43200; // seconds the bot stays quiet after staff write or the guest asks for the team
+const WA_BOT_ADDRESS = "Late Venutai Chavan Multipurpose Hall\nYashwantrao Chavan Smarak, Sector 27A, Pradhikaran, Nigdi, Pune 411044";
+const WA_BOT_MAP = 'https://www.google.com/maps/search/?api=1&query=Late+Venutai+Chavan+Multipurpose+Hall+Nigdi+Pune';
+// Hall FAQ, facts as published on the website: key => [list title (24 max), keyword regex for typed questions, answer].
+// Order matters for typed questions: the first matching topic answers.
+const WA_BOT_FAQ = [
+    'capacity' => ['👥 Capacity', '/capacity|how many (guests|people)|kitne log|kitne guest|seating|crowd|क्षमता|किती लोक/iu',
+        "👥 Capacity\n🏛️ Big Hall: up to 1,200 guests\n🏠 Small Hall: up to 350 guests\n🍽️ Dining Hall: 400 at a time\n⭐ VIP A/C Dining: 50 at a time"],
+    'price' => ['💰 Rates / price', '/price|\brates?\b|\bcost|charges?\b|\brent\b|kitna|kitne ka|\bfees?\b|package|quot|budget|भाड|किंमत|पैसे|किराया|कितना/iu',
+        "💰 Rates depend on the hall, the date and the package, so they are not fixed online.\n\nTap 📞 Talk to team for a quick quote, or 📝 Book / Enquire and our team will call you with the best rate."],
+    'visit' => ['👀 Visit the hall', '/visit|dekhn|dikha|see the hall|show the hall|बघाय|पहाय|देखन/iu',
+        "👀 Yes, you are welcome to visit and see the halls, dining spaces and guest rooms.\n🕘 Mon – Sun, 9:00 AM – 10:00 PM\n\nTap 📞 Talk to team to fix a time.\n📍 " . WA_BOT_MAP],
+    'location' => ['📍 Location / address', '/address|location|where|kaha|kidhar|\bmap\b|direction|reach|पत्ता|कुठे|कहाँ|कहां/iu',
+        "📍 " . WA_BOT_ADDRESS . "\n\nGoogle Maps: " . WA_BOT_MAP],
+    'catering' => ['🍽️ Food / catering', '/cater|food|khana|jevan|lunch|dinner|halwai|menu card|जेवण|खाना|आचारी/iu',
+        "🍽️ You can bring your own caterer – catering support is available.\nDining Hall: 400 at a time · VIP A/C Dining: 50 at a time.\n\nPlease confirm current arrangements with our team."],
+    'rooms' => ['🛏️ Guest rooms', '/room|stay|accommodation|रूम|खोली/iu',
+        "🛏️ Up to 8 air-conditioned guest rooms are available at the venue.\nPlease confirm availability for your date with our team."],
+    'facilities' => ['🎤 Facilities / A/C', '/\bac\b|a\/c|air.?condition|sound|speaker|\bdj\b|\bmic\b|projector|\bled\b|screen|wi-?fi|facilit|सुविधा/iu',
+        "🎤 Facilities\n❄️ Fully air-conditioned halls and dining spaces\n🔊 Acoustic sound system\n📺 LED screen and projector\n📶 Wi-Fi\n🚗 Parking"],
+    'parking' => ['🚗 Parking', '/parking|park\b|पार्किंग/iu',
+        "🚗 Yes, parking is available at the venue. Please ask our team about parking for your guest count."],
+    'timing' => ['🕘 Timings', '/timing|hours|open|close|kab tak|kitne baje|वेळ|समय/iu',
+        "🕘 The venue is open Monday – Sunday, 9:00 AM – 10:00 PM."],
+];
+
+function wa_bot_faq_match(string $text): string
+{
+    foreach (WA_BOT_FAQ as $key => [, $pattern]) {
+        if (preg_match($pattern, $text)) return $key;
+    }
+    return '';
+}
+
+function wa_bot_faq(PDO $db, array $wa, string $phone, string $key): void
+{
+    wa_bot_save($db, $phone, 'menu');
+    wa_bot_buttons($db, $wa, $phone, WA_BOT_FAQ[$key][2], ['m:book' => '📝 Book / Enquire', 'm:info' => 'ℹ️ More info', 'm:team' => '📞 Talk to team']);
+}
 
 function wa_bot_ensure_schema(PDO $db): void
 {
@@ -59,7 +97,7 @@ function wa_bot_menu(PDO $db, array $wa, string $phone, string $name, string $le
 {
     $hello = $lead !== '' ? $lead : 'Namaste' . ($name !== '' ? ' ' . $name : '') . ' 🙏 Welcome to Late Venutai Chavan Multipurpose Hall, Nigdi.';
     wa_bot_save($db, $phone, 'menu');
-    wa_bot_buttons($db, $wa, $phone, $hello . "\n\nHow can we help you?", ['m:dates' => '📅 Available dates', 'm:book' => '📝 Book / Enquire', 'm:team' => '📞 Talk to team']);
+    wa_bot_buttons($db, $wa, $phone, $hello . "\n\nHow can we help you?", ['m:dates' => '📅 Available dates', 'm:book' => '📝 Book / Enquire', 'm:info' => 'ℹ️ Hall info']);
 }
 
 /** Free dates of one hall in one month (Y-m), from today on; a date is taken when any row has it as booked_date. */
@@ -129,15 +167,19 @@ function wa_bot_reply(PDO $db, array $config, array $wa, string $phone, string $
     if (isset($m['timestamp']) && ctype_digit((string) $m['timestamp']) && (int) $m['timestamp'] < time() - 900) return;
     $id = (string) ($m['interactive']['button_reply']['id'] ?? $m['interactive']['list_reply']['id'] ?? '');
     $text = trim((string) ($m['text']['body'] ?? $m['button']['text'] ?? ''));
-    $greeting = (bool) preg_match('/^(hi+|hello|hey|hlo|namaste|namaskar|menu|start|हाय|नमस्ते|नमस्कार)\b/iu', $text);
+    // A typed question ("Hi, is parking available?") gets its answer instead of the menu.
+    $topic = $id === '' && ($m['type'] ?? '') === 'text' ? wa_bot_faq_match($text) : '';
+    $greeting = $topic === '' && preg_match('/^(hi+|hello|hey|hlo|namaste|namaskar|menu|start|हाय|नमस्ते|नमस्कार)\b/iu', $text);
     $state = wa_bot_state($db, $phone);
     $handedOver = $state['step'] === 'team' && $state['age'] < WA_BOT_STAFF_PAUSE;
     if ($state['age'] > 7200) $state = ['step' => '', 'data' => [], 'age' => 0];
 
     if ($id === '' && !$greeting) {
+        // A guest in the middle of the booking form always gets an answer.
+        if ($state['step'] === 'date') { wa_bot_take_date($db, $config, $wa, $phone, $name, $state['data'], $text); return; }
         // Staff are handling this chat: stay quiet.
         if ($handedOver || wa_bot_staff_active($db, $phone)) return;
-        if ($state['step'] === 'date') { wa_bot_take_date($db, $wa, $phone, $state['data'], $text); return; }
+        if ($topic !== '') { wa_bot_faq($db, $wa, $phone, $topic); return; }
         // Photos, voice notes and reactions, and a free-text question right after the menu, are left for staff.
         if (($m['type'] ?? '') !== 'text' || ($state['step'] === 'menu' && $state['age'] < 1800)) return;
         wa_bot_menu($db, $wa, $phone, $name, "Sorry, I didn't understand that.");
@@ -153,11 +195,17 @@ function wa_bot_reply(PDO $db, array $config, array $wa, string $phone, string $
                 wa_bot_buttons($db, $wa, $phone, 'Which hall would you like to check?', ['d:big' => '🏛️ Big Hall', 'd:small' => '🏠 Small Hall (≤350)']);
             } elseif ($a === 'book') {
                 wa_bot_save($db, $phone, 'book');
-                wa_bot_list($db, $wa, $phone, '📝 Booking request — step 1 of 4' . "\nWhat is the occasion?", 'Choose event', array_combine(array_map(static fn($i) => 'be:' . $i, array_keys(WA_BOT_EVENTS)), WA_BOT_EVENTS));
+                wa_bot_list($db, $wa, $phone, '📝 Booking request — step 1 of 3' . "\nWhat is the occasion?", 'Choose event', array_combine(array_map(static fn($i) => 'be:' . $i, array_keys(WA_BOT_EVENTS)), WA_BOT_EVENTS));
+            } elseif ($a === 'info') {
+                $rows = array_combine(array_map(static fn($key) => 'i:' . $key, array_keys(WA_BOT_FAQ)), array_column(WA_BOT_FAQ, 0));
+                wa_bot_list($db, $wa, $phone, 'ℹ️ What would you like to know?', 'Choose topic', $rows + ['m:team' => '📞 Talk to team']);
             } elseif ($a === 'team') {
                 wa_bot_save($db, $phone, 'team');
-                wa_bot_text($db, $wa, $phone, "Thank you! 🙏 Our team will reply here or call you on this number shortly.\nFor urgent help call " . booking_setting($db, 'venue_phone', '9359567494') . '.');
+                wa_bot_text($db, $wa, $phone, "Thank you! 🙏 Our team will reply here or call you on this number shortly.\nFor urgent help call " . wa_bot_venue_phone($db) . '.');
             }
+            return;
+        case 'i':
+            if (isset(WA_BOT_FAQ[$a])) wa_bot_faq($db, $wa, $phone, $a);
             return;
         case 'd':
             if (!isset(WA_BOT_HALLS[$a])) return;
@@ -178,28 +226,35 @@ function wa_bot_reply(PDO $db, array $config, array $wa, string $phone, string $
         case 'be':
             if (!isset(WA_BOT_EVENTS[(int) $a])) return;
             wa_bot_save($db, $phone, 'book', ['event' => WA_BOT_EVENTS[(int) $a]]);
-            wa_bot_buttons($db, $wa, $phone, "Step 2 of 4 – which hall?\n🏛️ Big Hall: large weddings and receptions\n🏠 Small Hall: up to 350 guests", ['bh:big' => '🏛️ Big Hall', 'bh:small' => '🏠 Small Hall']);
+            wa_bot_buttons($db, $wa, $phone, "Step 2 of 3 – which hall?\n🏛️ Big Hall: large weddings and receptions\n🏠 Small Hall: up to 350 guests", ['bh:big' => '🏛️ Big Hall', 'bh:small' => '🏠 Small Hall']);
             return;
         case 'bh':
             if (!isset(WA_BOT_HALLS[$a]) || empty($data['event'])) { wa_bot_menu($db, $wa, $phone, $name, 'Let us start again.'); return; }
             wa_bot_save($db, $phone, 'date', $data + ['hall' => $a]);
-            wa_bot_text($db, $wa, $phone, "Step 3 of 4 – please type your event date like this:\n25-12-2026");
+            wa_bot_text($db, $wa, $phone, "Step 3 of 3 – please type your event date like this:\n25-12-2026");
             return;
         case 'bg':
-            if (!isset(WA_BOT_GUESTS[(int) $a]) || empty($data['date'])) { wa_bot_menu($db, $wa, $phone, $name, 'Let us start again.'); return; }
-            $data['guests'] = (int) $a;
-            wa_bot_save($db, $phone, 'confirm', $data);
-            wa_bot_buttons($db, $wa, $phone, "Please check your request:\n\n🎉 {$data['event']}\n🏛️ " . WA_BOT_HALLS[$data['hall']] . "\n📅 " . date('d M Y', strtotime($data['date'])) . "\n👥 " . WA_BOT_GUESTS[(int) $a] . ' guests', ['bc:yes' => '✅ Send request', 'm:menu' => '🔄 Start over']);
+            // Optional detail after the enquiry is already saved and the team alerted.
+            if (!isset(WA_BOT_GUESTS[(int) $a]) || $state['step'] !== 'guests' || empty($data['id'])) { wa_bot_menu($db, $wa, $phone, $name); return; }
+            $db->prepare("UPDATE bookings SET guests = ? WHERE id = ? AND phone = ? AND source = 'whatsapp'")->execute([(int) $a, (int) $data['id'], $phone]);
+            wa_bot_save($db, $phone, '');
+            wa_bot_buttons($db, $wa, $phone, '👍 Noted: ' . WA_BOT_GUESTS[(int) $a] . " guests. Our team will have everything ready when they call you.", ['m:info' => 'ℹ️ Hall info', 'm:menu' => '🏠 Menu']);
             return;
         case 'bc':
-            if ($state['step'] !== 'confirm' || empty($data['guests'])) { wa_bot_menu($db, $wa, $phone, $name, 'This request has expired. Let us start again.'); return; }
-            wa_bot_create_enquiry($db, $config, $wa, $phone, $name, $data);
+            // Confirm button from the older flow; the request is now sent as soon as the date is free.
+            wa_bot_menu($db, $wa, $phone, $name, 'This request has expired. Let us start again.');
             return;
     }
 }
 
-function wa_bot_take_date(PDO $db, array $wa, string $phone, array $data, string $text): void
+function wa_bot_venue_phone(PDO $db): string
 {
+    return booking_setting($db, 'venue_phone', '') ?: '9359567494';
+}
+
+function wa_bot_take_date(PDO $db, array $config, array $wa, string $phone, string $name, array $data, string $text): void
+{
+    if (empty($data['event']) || !isset(WA_BOT_HALLS[$data['hall'] ?? ''])) { wa_bot_menu($db, $wa, $phone, $name, 'Let us start again.'); return; }
     $date = wa_bot_parse_date($text);
     if ($date === '' || !booking_valid_date($date)) { wa_bot_text($db, $wa, $phone, "Please type a future date like this: 25-12-2026"); return; }
     $check = $db->prepare('SELECT 1 FROM bookings WHERE booked_date = ? AND hall = ? LIMIT 1');
@@ -208,16 +263,15 @@ function wa_bot_take_date(PDO $db, array $wa, string $phone, array $data, string
         wa_bot_text($db, $wa, $phone, '😔 ' . WA_BOT_HALLS[$data['hall']] . ' is already booked on ' . date('d M Y', strtotime($date)) . ". Please type another date.");
         return;
     }
-    wa_bot_save($db, $phone, 'guests', $data + ['date' => $date]);
-    $rows = [];
-    foreach (WA_BOT_GUESTS as $count => $label) $rows['bg:' . $count] = $label;
-    wa_bot_list($db, $wa, $phone, 'Step 4 of 4 – about how many guests?', 'Choose guests', $rows);
+    // The date is free: save the enquiry and alert the sales team now; the guest count is asked after, optionally.
+    wa_bot_create_enquiry($db, $config, $wa, $phone, $name, $data + ['date' => $date]);
 }
 
 function wa_bot_create_enquiry(PDO $db, array $config, array $wa, string $phone, string $name, array $data): void
 {
     $name = $name !== '' ? $name : 'WhatsApp guest';
-    $message = 'Booking request from the WhatsApp assistant.';
+    $data['guests'] = $data['guests'] ?? null;
+    $message = 'Booking request from the WhatsApp assistant. The date was free when the guest asked.';
     $db->beginTransaction();
     try {
         $db->prepare("INSERT INTO bookings (name, phone, email, event_type, hall, event_date, guests, message, status, record_type, source) VALUES (?, ?, '', ?, ?, ?, ?, ?, 'pending', 'enquiry', 'whatsapp')")
@@ -229,7 +283,13 @@ function wa_bot_create_enquiry(PDO $db, array $config, array $wa, string $phone,
         if ($db->inTransaction()) $db->rollBack();
         throw $error;
     }
-    wa_bot_save($db, $phone, '');
-    wa_bot_text($db, $wa, $phone, "✅ Thank you, {$name}! Your request is received.\nReference: ENQ-" . str_pad((string) $id, 6, '0', STR_PAD_LEFT) . "\n\nOur team will call you shortly to confirm. The date is held only after our team confirms the booking.");
+    $hour = (int) (new DateTimeImmutable('now', new DateTimeZone('Asia/Kolkata')))->format('G');
+    $when = $hour >= 9 && $hour < 21 ? 'within 15 minutes' : 'tomorrow morning after 9 AM';
+    wa_bot_save($db, $phone, 'guests', ['id' => $id]);
+    $rows = [];
+    foreach (WA_BOT_GUESTS as $count => $label) $rows['bg:' . $count] = $label;
+    wa_bot_list($db, $wa, $phone, "✅ Good news, {$name}! " . WA_BOT_HALLS[$data['hall']] . ' is available on ' . date('d M Y', strtotime($data['date'])) . ".\n🎉 {$data['event']}\nReference: ENQ-" . str_pad((string) $id, 6, '0', STR_PAD_LEFT)
+        . "\n\n📞 Our sales team has been alerted and will call you {$when}. The date is held only after the team confirms the booking."
+        . "\n\nTo help us prepare, about how many guests? (optional)", 'Choose guests', $rows);
     lead_notify($db, $config, ['id' => $id, 'name' => $name, 'phone' => $phone, 'email' => '', 'event_type' => $data['event'], 'hall' => $data['hall'], 'event_date' => $data['date'], 'guests' => $data['guests'], 'message' => $message, 'source' => 'whatsapp']);
 }
