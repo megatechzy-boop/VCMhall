@@ -498,3 +498,10 @@ Verification (local PHP 8.3 + SQLite, all four roles signed in):
 - Role change visible on the next request; switched-off user signed out on next click and cannot sign in.
 - Activity shows "by Ram Manager (Manager)"; php -l on all admin PHP and node --check clean; no PHP warnings in the server log.
 - Visual screenshot of the Team page not taken (browser pane was not drawing).
+
+## 2026-11-25
+Group: Social media links
+- Footer of all 35 pages: new "Follow us" row under Hours with Facebook (page "Venutai hall", facebook.com/1318139754712697) and Instagram (@venutaimultipurposehall). Links found through the Meta ads connection.
+- index.html JSON-LD sameAs now lists both profiles (helps Google connect the site with them).
+- New icons i-facebook and i-instagram in the page sprite; new CSS class .footer-follow (old unused .footer-social styles left alone). styles.min.css rebuilt, ?v= bumped on 38 pages.
+- Checked: _check.py clean, JSON-LD parses, footer looked right in the browser.

@@ -2111,6 +2111,9 @@
     margin-bottom: 3px;
   }
   .footer-contact-rows p { font-size: 14.5px; line-height: 1.65; }
+  .footer-follow { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+  .footer-follow a { display: inline-flex; align-items: center; gap: 7px; }
+  .footer-follow .icon { width: 18px; height: 18px; }
   .footer-bottom {
     display: flex;
     align-items: center;
