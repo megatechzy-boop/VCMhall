@@ -505,3 +505,4 @@ Group: Social media links
 - index.html JSON-LD sameAs now lists both profiles (helps Google connect the site with them).
 - New icons i-facebook and i-instagram in the page sprite; new CSS class .footer-follow (old unused .footer-social styles left alone). styles.min.css rebuilt, ?v= bumped on 38 pages.
 - Checked: _check.py clean, JSON-LD parses, footer looked right in the browser.
+- Added YouTube (youtube.com/@VenutaiMultipurposeHall, link from the owner) to the footer "Follow us" row on all 35 pages and to index.html sameAs; new i-youtube icon. Browser check: three links, YouTube wraps to a second line at 1024px, no overlap.
