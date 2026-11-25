@@ -202,3 +202,21 @@ dialog::backdrop,.drawer-backdrop{background:rgba(17,20,26,.4);backdrop-filter:b
 .log-table{min-width:560px}
 .form-grid .wide{grid-column:1/-1}
 .log-table td small{max-width:220px;overflow-wrap:anywhere}
+
+/* Bookings: payments dialog */
+.payment-dialog{width:min(620px,calc(100vw - 24px));max-height:calc(100dvh - 32px);overflow:auto;padding:0}
+.payment-dialog .modal-form{display:grid;gap:14px;padding:22px}
+.payment-dialog header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.payment-dialog header h2{margin:2px 0 0;font-size:20px}
+.payment-dialog .payment-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.payment-dialog .payment-summary div{padding:10px 12px;border-radius:var(--r-sm);background:var(--surface-2)}
+.payment-dialog .payment-summary span{display:block;color:var(--text-3);font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.payment-dialog .payment-summary strong{font-size:17px}
+.payment-dialog .timeline{display:grid;gap:6px;max-height:180px;overflow:auto}
+.payment-dialog .compact-form{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;margin:0;padding-top:14px;border-top:1px solid var(--border)}
+.payment-dialog .compact-form h3,.payment-dialog .compact-form .helper-text{grid-column:1/-1;margin:0}
+.payment-dialog .compact-form h3{font-size:15px}
+.payment-dialog #pdTotalForm button{align-self:end}
+.payment-dialog #pdPaymentForm button{grid-column:1/-1}
+.payment-open{margin-right:6px}
+@media(max-width:560px){.payment-dialog .compact-form{grid-template-columns:1fr}.payment-dialog .payment-summary strong{font-size:15px}}
