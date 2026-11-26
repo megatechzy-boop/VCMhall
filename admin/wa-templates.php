@@ -105,9 +105,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($action === 'create_default') {
                 $key = (string) ($_POST['default'] ?? '');
                 $audience = $key === 'new_lead_alert' ? 'team' : 'customer';
-                if (!isset(TPL_EXAMPLES[$key])) throw new InvalidArgumentException('Unknown ready-made template.');
                 $name = $key; $lang = 'en'; $category = 'UTILITY'; $footer = 'Late Venutai Chavan Multipurpose Hall';
-                $body = LEAD_DEFAULT_TEMPLATES[$audience]['body']; $examples = TPL_EXAMPLES[$key];
+                if (isset(BOOKING_DEFAULT_TEMPLATES[$key])) {
+                    $category = BOOKING_DEFAULT_TEMPLATES[$key]['category']; $body = BOOKING_DEFAULT_TEMPLATES[$key]['body']; $examples = BOOKING_DEFAULT_TEMPLATES[$key]['examples'];
+                } elseif (isset(TPL_EXAMPLES[$key])) {
+                    $body = LEAD_DEFAULT_TEMPLATES[$audience]['body']; $examples = TPL_EXAMPLES[$key];
+                } else throw new InvalidArgumentException('Unknown ready-made template.');
             } else {
                 $name = strtolower(trim((string) ($_POST['name'] ?? '')));
                 $lang = trim((string) ($_POST['language'] ?? 'en'));
@@ -190,11 +193,13 @@ $statusClass = static fn(?string $st): string => match (strtoupper((string) $st)
 
     <section class="settings-grid alerts-grid">
         <section class="settings-card-form">
-            <div class="settings-heading"><div><h2>Ready-made templates</h2><p>Written for lead alerts. Submit with one click.</p></div></div>
-            <?php foreach (['enquiry_received' => 'customer', 'new_lead_alert' => 'team'] as $key => $audience): ?>
+            <div class="settings-heading"><div><h2>Ready-made templates</h2><p>Written for lead alerts and bookings. Submit with one click; they are used automatically once Meta approves them.</p></div></div>
+            <?php $readyUse = ['booking_cancelled' => 'When a booking is cancelled', 'payment_due_reminder' => BOOKING_DUE_REMINDER_DAYS . ' days before the event, if money is due', 'thank_you_review' => 'Day after the event, with your Google review link'];
+            foreach (['enquiry_received' => 'customer', 'new_lead_alert' => 'team', 'booking_cancelled' => 'customer', 'payment_due_reminder' => 'customer', 'thank_you_review' => 'customer'] as $key => $audience): ?>
             <article class="ready-template">
                 <header><strong><?= th($key) ?></strong><span class="source-badge"><?= $audience === 'customer' ? 'To guest' : 'To team' ?> · Utility</span></header>
-                <p class="template-body"><?= nl2br(th(LEAD_DEFAULT_TEMPLATES[$audience]['body'])) ?></p>
+                <?php if (isset($readyUse[$key])): ?><p class="helper-text">Sent automatically: <?= th($readyUse[$key]) ?>.</p><?php endif; ?>
+                <p class="template-body"><?= nl2br(th(BOOKING_DEFAULT_TEMPLATES[$key]['body'] ?? LEAD_DEFAULT_TEMPLATES[$audience]['body'])) ?></p>
                 <?php if (in_array($key, $existingNames, true)): ?>
                     <p class="helper-text">Already created — see its status below.</p>
                 <?php else: ?>

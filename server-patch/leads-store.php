@@ -169,7 +169,16 @@ function lead_finish_response(): void
 /* ---------- Booking messages to the guest ---------- */
 
 // Template names and variable order must match the templates submitted from the admin templates page.
-const BOOKING_WA_TEMPLATES = ['confirmed' => 'booking_confirmed', 'payment' => 'payment_received', 'reminder' => 'event_reminder'];
+const BOOKING_WA_TEMPLATES = ['confirmed' => 'booking_confirmed', 'payment' => 'payment_received', 'reminder' => 'event_reminder', 'cancelled' => 'booking_cancelled', 'due' => 'payment_due_reminder', 'thanks' => 'thank_you_review'];
+
+// Ready-made booking templates offered on the WhatsApp templates page. Variable order must match lead_booking_whatsapp().
+const BOOKING_DEFAULT_TEMPLATES = [
+    'booking_cancelled' => ['category' => 'UTILITY', 'body' => "Namaste {{1}}, your booking {{2}} for {{3}} on {{4}} at Late Venutai Chavan Multipurpose Hall has been cancelled. For any questions, please reply to this message.", 'examples' => ['Priya', 'VCM-000024', 'Wedding', '12 Dec 2026']],
+    'payment_due_reminder' => ['category' => 'UTILITY', 'body' => "Namaste {{1}}, this is a reminder that ₹{{2}} is still due for your {{3}} on {{4}} (booking {{5}}) at Late Venutai Chavan Multipurpose Hall. Please reply to this message for payment details.", 'examples' => ['Priya', '25,000', 'Wedding', '12 Dec 2026', 'VCM-000024']],
+    'thank_you_review' => ['category' => 'UTILITY', 'body' => "Namaste {{1}}, thank you for celebrating your {{2}} at Late Venutai Chavan Multipurpose Hall. We would love to hear about your experience. Please share a review here: {{3}} Thank you!", 'examples' => ['Priya', 'Wedding', 'https://g.page/r/example/review']],
+];
+// Days before the event to remind about an unpaid balance.
+const BOOKING_DUE_REMINDER_DAYS = 7;
 
 function booking_reference(int $id): string
 {
@@ -192,6 +201,11 @@ function lead_booking_whatsapp(PDO $db, array $config, int $bookingId, string $k
         if ($number === '') { lead_log($db, $bookingId, 'customer', 'whatsapp', (string) $booking['phone'], 'skipped', 'Invalid WhatsApp number.'); return false; }
         $wa = wa_config($db, $config);
         if ($wa['token'] === '' || $wa['phone_id'] === '') { lead_log($db, $bookingId, 'customer', 'whatsapp', $number, 'skipped', 'WhatsApp is not connected yet.'); return false; }
+        // Newer templates wait for Meta approval; skip quietly instead of failing every send until then.
+        $known = wa_template_find($db, $template, 'en');
+        if (!$known || strtoupper((string) $known['status']) !== 'APPROVED') { lead_log($db, $bookingId, 'customer', 'whatsapp', $number, 'skipped', 'Template ' . $template . ' is not approved yet.'); return false; }
+        $reviewUrl = trim(booking_setting($db, 'google_review_url', ''));
+        if ($kind === 'thanks' && $reviewUrl === '') { lead_log($db, $bookingId, 'customer', 'whatsapp', $number, 'skipped', 'Template thank_you_review: add the Google review link in Settings > Contact details.'); return false; }
         $name = $booking['name'] ?: 'there';
         $event = $booking['event_type'] ?: 'event';
         $date = lead_event_date_label($booking['event_date'] ?? null);
@@ -200,6 +214,9 @@ function lead_booking_whatsapp(PDO $db, array $config, int $bookingId, string $k
             'confirmed' => [$name, $event, $date, booking_reference($bookingId)],
             'payment' => [$name, $money($amount), booking_reference($bookingId), $money(max(0, (float) $booking['total_amount'] - (float) $booking['paid']))],
             'reminder' => [$name, $event, $date],
+            'cancelled' => [$name, booking_reference($bookingId), $event, $date],
+            'due' => [$name, $money(max(0, (float) $booking['total_amount'] - (float) $booking['paid'])), $event, $date, booking_reference($bookingId)],
+            'thanks' => [$name, $event, $reviewUrl],
         };
         wa_send_template($db, $wa, $number, $template, 'en', $params, 'booking-alerts');
         lead_log($db, $bookingId, 'customer', 'whatsapp', $number, 'sent', 'Template ' . $template);

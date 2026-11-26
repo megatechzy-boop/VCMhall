@@ -102,7 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $query = $db->prepare("UPDATE bookings SET status = 'cancelled', booked_date = NULL WHERE id = ? AND status NOT IN ('cancelled','converted')");
                 $query->execute([$id]); if (!$query->rowCount()) admin_finish('Record could not be updated.');
                 admin_activity($db, $id, 'cancelled', $recordType === 'block' ? 'Date made available by admin' : ($recordType === 'enquiry' ? 'Enquiry closed' : 'Booking cancelled'));
-                admin_finish($recordType === 'block' ? 'Date is available again.' : ($recordType === 'enquiry' ? 'Enquiry closed.' : 'Booking cancelled. The date is available again.'));
+                $sent = $recordType === 'booking' && admin_booking_whatsapp($db, $id, 'cancelled');
+                admin_finish($recordType === 'block' ? 'Date is available again.' : ($recordType === 'enquiry' ? 'Enquiry closed.' : 'Booking cancelled. The date is available again.' . ($sent ? ' WhatsApp sent to the guest.' : '')));
             }
             if ($action === 'add_booking') {
                 $name = trim((string) ($_POST['name'] ?? '')); $phone = trim((string) ($_POST['phone'] ?? '')); $email = trim((string) ($_POST['email'] ?? ''));

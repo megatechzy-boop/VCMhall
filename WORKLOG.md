@@ -535,3 +535,14 @@ Group: Inbox template boxes filled in automatically
 - The boxes are filled from the chat's records: the next upcoming confirmed booking for that number, else the newest record. The booking ID is filled only for a booking, never for an enquiry. Payment boxes use the last recorded payment and total minus paid. A line under the boxes says which record was used ("Check before sending"), or that no booking was found. Every box stays editable.
 - inbox-api.php: thread records now also carry total, paid and last_paid (one LEFT JOIN on booking_payments plus a last-payment subquery). inbox.css: label and note styles.
 - Local test with the 5 live template bodies: booking_confirmed, enquiry_received, event_reminder, payment_received ("received ₹20,000 ... Balance due: ₹60,000") and new_lead_alert all labelled and filled correctly. A number with no booking keeps only the name and shows the "No booking found" note.
+
+Group: Three more booking WhatsApp templates
+- New ready-made templates on Settings > WhatsApp templates (one-click "Submit to Meta", Utility): booking_cancelled, payment_due_reminder, thank_you_review. Texts live in BOOKING_DEFAULT_TEMPLATES (server-patch/leads-store.php).
+- Sent automatically once Meta approves them:
+  - booking_cancelled: when a booking is cancelled on the Bookings page (admin/index.php cancel action; not for enquiries or date blocks).
+  - payment_due_reminder: 7 days before the event (BOOKING_DUE_REMINDER_DAYS) when paid < agreed total; sent from the existing daily cron server-patch/booking-reminders.php.
+  - thank_you_review: the day after the event, from the same cron, with the link saved in Settings > Contact details > Google review link (new field google_review_url, https only). With no link saved it is skipped and logged.
+- lead_booking_whatsapp() now skips (and logs "not approved yet") when a booking template is missing or not APPROVED in wa_templates, instead of failing on every send before approval.
+- Each cron message goes at most once per booking (lead_notifications check), so re-runs do not repeat.
+- Local test (mock Graph API): pending template skipped; approved cancel sent; due reminder sent for a part-paid booking, not for a fully paid one; thank-you skipped without a link, sent once with a link, not resent on a second cron run. Message texts checked. Review link saved through the Contact details page.
+- The cron must be set in cPanel (daily): php /home/venutaihall/public_html/server-patch/booking-reminders.php. Not verified on the live server.
