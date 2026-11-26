@@ -528,3 +528,10 @@ Group: Enquiry drawer tabs
 - Local browser test: ENQ-000001 Payment tab shows the button; clicking it opened VCM-000004's payment dialog with history and the record form.
 - Bug: the enquiry drawer never filled the Hall dropdown (dHall missing from the field list in enquiries.js), so it always showed Big Hall and "Save Enquiry" on a Small Hall enquiry silently moved it to Big Hall. Fixed; local test: Small Hall enquiry shows Small Hall and stays Small after saving.
 - Bug: a converted enquiry showed an empty Status and a Save button that failed with "Invalid enquiry update". Now its fields are read-only, Status shows "Booking created", Save is hidden, and a note points to the Bookings page.
+
+Group: Inbox template boxes filled in automatically
+- Problem: the "Send template" boxes in the WhatsApp Inbox were labelled only {{1}} {{2}} {{3}} {{4}}, so staff could not tell what to type.
+- inbox.js now reads the words before each {{n}} in the template body and gives the box a plain label: Guest name, Event, Event date, Booking ID, Amount received (₹), Balance due (₹), Phone, Lead source (fallback "Detail n").
+- The boxes are filled from the chat's records: the next upcoming confirmed booking for that number, else the newest record. The booking ID is filled only for a booking, never for an enquiry. Payment boxes use the last recorded payment and total minus paid. A line under the boxes says which record was used ("Check before sending"), or that no booking was found. Every box stays editable.
+- inbox-api.php: thread records now also carry total, paid and last_paid (one LEFT JOIN on booking_payments plus a last-payment subquery). inbox.css: label and note styles.
+- Local test with the 5 live template bodies: booking_confirmed, enquiry_received, event_reminder, payment_received ("received ₹20,000 ... Balance due: ₹60,000") and new_lead_alert all labelled and filled correctly. A number with no booking keeps only the name and shows the "No booking found" note.

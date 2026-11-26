@@ -122,4 +122,6 @@
 .reply-save input{flex:1;min-width:0}
 .template-preview{margin:10px 0;padding:10px 12px;border-radius:10px;background:#e3f6e9;font-size:13.5px;white-space:pre-wrap}
 .template-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:10px}
+.template-fields label{display:grid;gap:4px;font-size:12.5px;font-weight:600;color:var(--text-2)}
+.template-source{grid-column:1/-1;margin:0;font-size:12.5px;color:var(--text-3)}
 @media (max-width:900px){.composer-panel{left:8px;right:8px}.reply-save{flex-direction:column}}

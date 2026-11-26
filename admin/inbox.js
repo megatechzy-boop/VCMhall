@@ -11,7 +11,7 @@
   const details = $('threadDetails'), records = $('recordList');
   const STATUS_TICKS = { sent: '✓', delivered: '✓✓', read: '✓✓', failed: '!' };
   const STATUS_LABELS = { pending: 'New enquiry', in_discussion: 'In discussion', quote_sent: 'Quote sent', follow_up: 'Reminder set', converted: 'Booking created', cancelled: 'Cancelled', confirmed: 'Confirmed' };
-  let activeName = '', active = '', lastId = 0, lastDay = '', searchTimer = 0, listTimer = 0, threadTimer = 0, busy = false;
+  let activeRecords = [], activeName = '', active = '', lastId = 0, lastDay = '', searchTimer = 0, listTimer = 0, threadTimer = 0, busy = false;
 
   const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt !== undefined) n.textContent = txt; return n; };
   const parse = (s) => new Date(String(s).replace(' ', 'T') + '+05:30');
@@ -128,6 +128,7 @@
   }
 
   function renderRecords(data) {
+    activeRecords = data.records || [];
     records.replaceChildren();
     if (!data.records.length) records.append(el('p', 'muted', 'No enquiry or booking matches this number yet.'));
     for (const r of data.records) {
@@ -138,6 +139,7 @@
     }
     const link = $('newEnquiryLink');
     link.href = 'enquiries.php?' + new URLSearchParams({ new: '1', name: data.name || '', phone: data.phone.length === 12 && data.phone.startsWith('91') ? data.phone.slice(2) : data.phone });
+    renderTemplateFields();
   }
 
   function renderWindow(data) {
@@ -270,16 +272,63 @@
     renderTemplateFields();
   }
   function selectedTemplate() { return templates.find((t) => `${t.name}|${t.language}` === select.value); }
+  // Works out what each {{n}} means from the words just before it, so the box gets a plain label.
+  const SLOTS = [
+    [/(?:namaste|hello|hi|dear|name:)\s*$/, 'Guest name', 'name'],
+    [/balance due:\s*₹?\s*$/, 'Balance due (₹)', 'balance'],
+    [/₹\s*$/, 'Amount received (₹)', 'amount'],
+    [/(?:booking id:|booking|id:)\s*$/, 'Booking ID', 'ref'],
+    [/phone:\s*$/, 'Phone', 'phone'],
+    [/(?:event:|for|your)\s*$/, 'Event', 'event'],
+    [/(?:date:|on)\s*$/, 'Event date', 'date'],
+    [/new\s*$/, 'Lead source', 'source'],
+  ];
+  function slotFor(body, n) {
+    const at = body.indexOf(`{{${n}}}`);
+    const before = body.slice(Math.max(0, at - 30), Math.max(0, at)).toLowerCase();
+    const hit = SLOTS.find(([re]) => re.test(before));
+    return hit ? { label: hit[1], key: hit[2] } : { label: `Detail ${n}`, key: '' };
+  }
+  // The record a template is most likely about: the next confirmed booking, else the newest record.
+  function bestRecord() {
+    const today = new Date().toISOString().slice(0, 10);
+    const booked = activeRecords.filter((r) => r.type === 'booking' && r.status === 'confirmed');
+    const upcoming = booked.filter((r) => String(r.date) >= today).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    return upcoming[0] || booked[0] || activeRecords[0] || null;
+  }
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const dateText = (d) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || '')); return m ? `${m[3]} ${MONTHS[+m[2] - 1]} ${m[1]}` : ''; };
+  const money = (v) => Math.round(v).toLocaleString('en-IN');
+  function autoValue(key, r) {
+    switch (key) {
+      case 'name': return activeName || '';
+      case 'phone': return active ? pretty(active) : '';
+      case 'event': return r?.event || '';
+      case 'date': return dateText(r?.date);
+      case 'ref': return r && r.type === 'booking' ? r.ref : '';
+      case 'amount': return r && r.type === 'booking' && r.last_paid > 0 ? money(r.last_paid) : '';
+      case 'balance': return r && r.type === 'booking' && r.total > 0 ? money(Math.max(0, r.total - r.paid)) : '';
+      default: return '';
+    }
+  }
   function renderTemplateFields() {
     const t = selectedTemplate();
     fields.replaceChildren(); preview.textContent = t ? t.body : '';
+    const record = bestRecord();
+    let filled = false;
     for (let i = 1; i <= (t?.variables || 0); i += 1) {
-      const label = el('label', '', `{{${i}}}`);
+      const slot = slotFor(t.body, i);
+      const label = el('label', '', slot.label);
       const input = el('input'); input.name = 'param'; input.maxLength = 200; input.required = true;
-      if (i === 1) input.value = activeName || '';
+      input.value = autoValue(slot.key, record);
+      if (input.value && slot.key !== 'name' && slot.key !== 'phone') filled = true;
+      if (slot.key === 'amount') input.placeholder = 'e.g. 10,000';
+      else if (slot.key === 'source') input.placeholder = 'e.g. Website';
+      else if (slot.key === 'ref') input.placeholder = 'e.g. VCM-000024';
       input.addEventListener('input', updatePreview);
       label.append(input); fields.append(label);
     }
+    if (t?.variables) fields.append(el('p', 'template-source', filled && record ? `Filled from ${record.ref} (${record.event}, ${dateText(record.date)}). Check before sending.` : 'No booking found for this number. Fill in the boxes.'));
     updatePreview();
   }
   function updatePreview() {

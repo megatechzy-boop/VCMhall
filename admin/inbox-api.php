@@ -28,7 +28,7 @@ function inbox_key(string $phone): string
 function inbox_records(PDO $db): array
 {
     $map = [];
-    $rows = $db->query("SELECT id, name, phone, event_type, event_date, hall, status, record_type FROM bookings WHERE record_type IN ('enquiry','booking') AND phone <> '' ORDER BY id DESC LIMIT 3000")->fetchAll();
+    $rows = $db->query("SELECT b.id, b.name, b.phone, b.event_type, b.event_date, b.hall, b.status, b.record_type, b.total_amount, COALESCE(p.paid, 0) paid, (SELECT amount FROM booking_payments lp WHERE lp.booking_id = b.id ORDER BY lp.id DESC LIMIT 1) last_paid FROM bookings b LEFT JOIN (SELECT booking_id, SUM(amount) paid FROM booking_payments GROUP BY booking_id) p ON p.booking_id = b.id WHERE b.record_type IN ('enquiry','booking') AND b.phone <> '' ORDER BY b.id DESC LIMIT 3000")->fetchAll();
     foreach ($rows as $row) {
         $key = inbox_key((string) $row['phone']);
         if (strlen($key) === 10) $map[$key][] = $row;
@@ -180,6 +180,9 @@ if ($action === 'thread') {
             'date' => $r['event_date'],
             'hall' => ucfirst((string) $r['hall']) . ' Hall',
             'status' => $r['status'],
+            'total' => (float) ($r['total_amount'] ?? 0),
+            'paid' => (float) ($r['paid'] ?? 0),
+            'last_paid' => (float) ($r['last_paid'] ?? 0),
         ], $records),
         'unread' => wa_unread_count($db),
     ]);
