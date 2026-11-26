@@ -207,6 +207,10 @@ dialog::backdrop,.drawer-backdrop{background:rgba(17,20,26,.4);backdrop-filter:b
 .payment-dialog{width:min(620px,calc(100vw - 24px));max-height:calc(100dvh - 32px);overflow:auto;padding:0}
 .payment-dialog label.date-notify{display:flex;flex-direction:row;align-items:center;gap:10px;font-weight:500}
 .payment-dialog label.date-notify input{width:auto;min-height:0;margin:0;flex:0 0 auto}
+/* Enquiry drawer tabs: show only the chosen panel (Details, Payment, Timeline, Notes) */
+.enquiry-drawer .drawer-content>[data-panel]{display:none}
+.enquiry-drawer .drawer-content>[data-panel].active{display:block}
+.enquiry-drawer .payment-link{width:100%;margin-top:4px}
 /* Confirmation box (replaces the browser confirm popup) */
 .confirm-dialog{width:min(420px,calc(100vw - 32px));padding:0;margin:auto;border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-3);background:var(--card,#fff);color:var(--ink)}
 .confirm-dialog[open]{animation:confirm-in .14s ease-out}

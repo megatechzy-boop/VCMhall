@@ -520,3 +520,11 @@ Group: Centered confirmation box instead of the browser popup
 - admin.js, enquiries.js, settings.js and inbox.js (delete saved reply) no longer call window.confirm. Focus starts on "No, go back" so Enter does not confirm by accident; Esc and clicking outside also mean No.
 - CSS in theme.css (.confirm-dialog, no inline styles; admin CSP style-src self). Date dialog checkbox now sits on one line with its text.
 - Local browser test: move booking (confirm then Yes -> moved), cancel booking (red box, No -> nothing changed), lead alerts test (settings.js prompt), data-confirm button (one box only, red).
+
+Group: Enquiry drawer tabs
+- Bug (since the first admin deploy): in the Enquiries detail drawer, clicking Payment / Timeline / Notes only moved the underline; all four panels were always shown stacked. enquiries.js toggles .active on [data-panel], but only [data-drawer-panel] (dashboard drawer) had hide/show CSS.
+- Fix in theme.css: .enquiry-drawer .drawer-content>[data-panel] hidden unless .active. Checked on the live page with the rule applied in the browser only: each tab shows just its own panel.
+- Enquiry drawer Payment tab was summary-only (no way to record a payment from there). It now shows a "₹ Record payment" button for a confirmed booking (roles with money permission) that opens bookings.php?tab=confirmed&date=<event date>&pay=<booking id>; bookings-payments.js opens that booking's payment dialog on load. A cancelled booking says so instead. The 1-5 payment limit is still set in Settings > Payments.
+- Local browser test: ENQ-000001 Payment tab shows the button; clicking it opened VCM-000004's payment dialog with history and the record form.
+- Bug: the enquiry drawer never filled the Hall dropdown (dHall missing from the field list in enquiries.js), so it always showed Big Hall and "Save Enquiry" on a Small Hall enquiry silently moved it to Big Hall. Fixed; local test: Small Hall enquiry shows Small Hall and stays Small after saving.
+- Bug: a converted enquiry showed an empty Status and a Save button that failed with "Invalid enquiry update". Now its fields are read-only, Status shows "Booking created", Save is hidden, and a note points to the Bookings page.

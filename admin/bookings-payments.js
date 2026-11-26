@@ -53,4 +53,6 @@
   document.querySelectorAll('[data-payment-id]').forEach((button) => button.addEventListener('click', () => open(button.dataset.paymentId)));
   dialog.querySelectorAll('[data-payment-close]').forEach((button) => button.addEventListener('click', () => dialog.close()));
   dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+  const wanted = new URLSearchParams(window.location.search).get('pay');
+  if (wanted && data.rows[wanted]) open(wanted);
 })();
