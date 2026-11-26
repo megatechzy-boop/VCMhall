@@ -3,13 +3,14 @@
     const action = event.target.querySelector('[name="action"]')?.value || event.submitter?.value || '';
     const prompts = {
       confirm: 'Confirm this enquiry as a booking? The date will be reserved.',
+      change_date: 'Move this booking to the new date? The old date will become available again.',
       cancel: 'Continue? This will close the enquiry or cancel the booking, and make a reserved date available.',
       block: 'Mark the selected hall date as unavailable?',
       add_booking: 'Add this booking and reserve the selected date?',
       add_payment: 'Record this payment? Check the amount and payment method first.',
       send_email: 'Send this email to the guest now?'
     };
-    if (prompts[action] && !window.confirm(prompts[action])) event.preventDefault();
+    if (prompts[action]) window.adminConfirmSubmit(event, prompts[action]);
   });
   const menu = document.getElementById('sidebar'); const menuToggle = document.getElementById('menuToggle');
   menuToggle?.addEventListener('click', () => { const open = menu.classList.toggle('open'); menuToggle.setAttribute('aria-expanded', String(open)); });

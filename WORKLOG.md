@@ -506,3 +506,17 @@ Group: Social media links
 - New icons i-facebook and i-instagram in the page sprite; new CSS class .footer-follow (old unused .footer-social styles left alone). styles.min.css rebuilt, ?v= bumped on 38 pages.
 - Checked: _check.py clean, JSON-LD parses, footer looked right in the browser.
 - Added YouTube (youtube.com/@VenutaiMultipurposeHall, link from the owner) to the footer "Follow us" row on all 35 pages and to index.html sameAs; new i-youtube icon. Browser check: three links, YouTube wraps to a second line at 1024px, no overlap.
+
+## 2026-11-26
+Group: Change a booking date
+- Bookings > Confirmed: each confirmed booking has a "Change date" button (roles with booking.manage: Super Admin, Owner, Manager, Sales). It opens a dialog with the current hall/date, a new date (today or later), hall, and a ticked "send updated confirmation on WhatsApp" box.
+- admin/index.php action change_date: only confirmed bookings; refuses the same date, past dates and any hall/date already held (same rule as the website calendar); moves event_date + booked_date + hall in one transaction; the old date becomes free; activity "Moved from ... to ... - by Name (Role)"; optional booking_confirmed WhatsApp with the new date. Payments and notes stay on the booking.
+- New admin/bookings-date.js (no inline JS, admin CSP safe); confirmation prompt added in admin.js; two small CSS rules in theme.css.
+- Local test: taken/same/past date and cancelled booking refused with clear messages; move saved, activity logged, website availability moved to the new date; Sales can use it. WhatsApp send not tested locally (no WhatsApp setup in the test copy).
+- Known limit: if the day-before reminder was already sent for the old date, the cron will not send another for the new date.
+
+Group: Centered confirmation box instead of the browser popup
+- New admin/confirm-dialog.js, loaded on every admin page from sidebar.php: adminConfirm(message) shows a centered box in the admin style ("No, go back" / "Yes, continue"; red "Are you sure?" for delete/cancel/close/unavailable). adminConfirmSubmit(event, message) pauses the form, asks, then re-submits with the same button. Any submit button with data-confirm="..." uses it automatically.
+- admin.js, enquiries.js, settings.js and inbox.js (delete saved reply) no longer call window.confirm. Focus starts on "No, go back" so Enter does not confirm by accident; Esc and clicking outside also mean No.
+- CSS in theme.css (.confirm-dialog, no inline styles; admin CSP style-src self). Date dialog checkbox now sits on one line with its text.
+- Local browser test: move booking (confirm then Yes -> moved), cancel booking (red box, No -> nothing changed), lead alerts test (settings.js prompt), data-confirm button (one box only, red).

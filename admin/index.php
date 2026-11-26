@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!admin_schema_ready($db)) admin_finish('Admin setup is incomplete. Please contact the person who manages the website before making changes.');
         $sources = ['website', 'meta-ads', 'whatsapp', 'instagram', 'phone', 'walk-in', 'other'];
         // Role check for every dashboard action (notes, reminders and emails are open to every role).
-        $actionPermission = ['add_booking' => 'booking.manage', 'block' => 'booking.manage', 'save_details' => 'booking.manage', 'confirm' => 'enquiry.convert', 'add_payment' => 'payment.record'];
+        $actionPermission = ['add_booking' => 'booking.manage', 'block' => 'booking.manage', 'save_details' => 'booking.manage', 'confirm' => 'enquiry.convert', 'add_payment' => 'payment.record', 'change_date' => 'booking.manage'];
         if (isset($actionPermission[$action]) && !admin_can($actionPermission[$action])) admin_finish('Your role (' . admin_role_label() . ') does not allow this action.');
         if ($action === 'cancel' && !admin_can('booking.manage')) {
             // Sales may close an open enquiry, but not cancel a booking or free a blocked date.
@@ -122,6 +122,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!$id || !in_array($source, $sources, true) || !is_numeric($total) || (float) $total < 0 || (float) $total > 99999999) admin_finish('Invalid booking details.');
                 $query = $db->prepare("UPDATE bookings SET source = ?, total_amount = ? WHERE id = ? AND status <> 'blocked'"); $query->execute([$source, (float) $total, $id]);
                 admin_activity($db, $id, 'details_updated', 'Source or total booking amount updated'); admin_finish('Booking details saved.');
+            }
+            if ($action === 'change_date') {
+                $id = admin_id(); $date = trim((string) ($_POST['event_date'] ?? '')); $hall = strtolower(trim((string) ($_POST['hall'] ?? '')));
+                if (!$id || !booking_valid_date($date) || !in_array($hall, ADMIN_HALLS, true)) admin_finish('Choose a valid hall and a current or future date.');
+                $db->beginTransaction();
+                $lock = $db->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql' ? ' FOR UPDATE' : '';
+                $current = $db->prepare("SELECT hall, event_date FROM bookings WHERE id = ? AND record_type = 'booking' AND status = 'confirmed'" . $lock); $current->execute([$id]); $old = $current->fetch();
+                if (!$old) { $db->rollBack(); admin_finish('Only a confirmed booking can be moved to another date.'); }
+                $oldDate = substr((string) $old['event_date'], 0, 10); $oldHall = (string) $old['hall'];
+                if ($oldDate === $date && $oldHall === $hall) { $db->rollBack(); admin_finish('The booking is already on that date and hall.'); }
+                $newLabel = ucfirst($hall) . ' Hall on ' . date('d M Y', strtotime($date));
+                // Same rule as the website calendar: any record holding the hall and date blocks it.
+                $taken = $db->prepare('SELECT 1 FROM bookings WHERE booked_date = ? AND hall = ? AND id <> ? LIMIT 1'); $taken->execute([$date, $hall, $id]);
+                if ($taken->fetchColumn()) { $db->rollBack(); admin_finish($newLabel . ' is already booked or unavailable. Choose another date.'); }
+                $update = $db->prepare("UPDATE bookings SET hall = ?, event_date = ?, booked_date = ? WHERE id = ? AND record_type = 'booking' AND status = 'confirmed'"); $update->execute([$hall, $date, $date, $id]);
+                admin_activity($db, $id, 'date_changed', 'Moved from ' . ucfirst($oldHall) . ' Hall on ' . date('d M Y', strtotime($oldDate)) . ' to ' . $newLabel);
+                $db->commit();
+                $sent = !empty($_POST['notify_guest']) && admin_booking_whatsapp($db, $id, 'confirmed');
+                admin_finish('Booking moved to ' . $newLabel . '. The old date is available again.' . ($sent ? ' Updated confirmation sent to the guest on WhatsApp.' : ''));
             }
             if ($action === 'save_notes') {
                 $id = admin_id(); $notes = trim((string) ($_POST['internal_notes'] ?? ''));

@@ -246,7 +246,7 @@
       use.addEventListener('click', () => { insertText(r.body.replaceAll('{name}', firstName())); panels.replies.hidden = true; });
       const del = el('button', 'reply-delete', '×'); del.type = 'button'; del.title = 'Delete ' + r.title; del.setAttribute('aria-label', 'Delete saved reply ' + r.title);
       del.addEventListener('click', async () => {
-        if (!window.confirm('Delete the saved reply "' + r.title + '"?')) return;
+        if (!(await window.adminConfirm('Delete the saved reply "' + r.title + '"?', { confirmText: 'Delete' }))) return;
         try { replies = (await api({}, { action: 'reply_delete', id: r.id })).replies; renderReplies(); } catch (e) { showError(e.message); }
       });
       li.append(use, del); ul.append(li);

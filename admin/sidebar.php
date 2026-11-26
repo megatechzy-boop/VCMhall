@@ -72,3 +72,4 @@ $sidebarMain = [
         </form>
     </div>
 </aside>
+<script src="<?= $sidebarPrefix ?>confirm-dialog.js?v=<?= filemtime(__DIR__ . '/confirm-dialog.js') ?>" defer></script>

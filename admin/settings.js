@@ -18,7 +18,7 @@
       test_alert: 'Send a test lead alert to every active team member now?'
     };
     const prompt = event.submitter?.dataset.confirm || prompts[action];
-    if (prompt && !window.confirm(prompt)) event.preventDefault();
+    if (prompt) window.adminConfirmSubmit(event, prompt);
   });
 
   const form = document.querySelector('.popup-form');

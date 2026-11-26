@@ -205,6 +205,21 @@ dialog::backdrop,.drawer-backdrop{background:rgba(17,20,26,.4);backdrop-filter:b
 
 /* Bookings: payments dialog */
 .payment-dialog{width:min(620px,calc(100vw - 24px));max-height:calc(100dvh - 32px);overflow:auto;padding:0}
+.payment-dialog label.date-notify{display:flex;flex-direction:row;align-items:center;gap:10px;font-weight:500}
+.payment-dialog label.date-notify input{width:auto;min-height:0;margin:0;flex:0 0 auto}
+/* Confirmation box (replaces the browser confirm popup) */
+.confirm-dialog{width:min(420px,calc(100vw - 32px));padding:0;margin:auto;border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-3);background:var(--card,#fff);color:var(--ink)}
+.confirm-dialog[open]{animation:confirm-in .14s ease-out}
+.confirm-dialog-body{display:grid;justify-items:center;text-align:center;gap:8px;padding:26px 24px 18px}
+.confirm-dialog-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--brand-50);color:var(--brand);font-weight:800;font-size:22px}
+.confirm-dialog.is-danger .confirm-dialog-icon{background:var(--bad-50);color:var(--bad)}
+.confirm-dialog h2{margin:4px 0 0;font-size:18px}
+.confirm-dialog p{margin:0;color:var(--text-2);font-size:14.5px;line-height:1.55}
+.confirm-dialog-actions{display:flex;gap:10px;padding:0 24px 22px}
+.confirm-dialog-actions button{flex:1}
+@keyframes confirm-in{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.confirm-dialog[open]{animation:none}}
+.date-dialog-actions{display:flex;justify-content:flex-end;gap:8px}
 .payment-dialog .modal-form{display:grid;gap:14px;padding:22px}
 .payment-dialog header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .payment-dialog header h2{margin:2px 0 0;font-size:20px}
